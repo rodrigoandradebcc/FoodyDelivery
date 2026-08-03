@@ -6,6 +6,7 @@ import com.foody.delivery.order.dto.PageResponse;
 import com.foody.delivery.order.dto.UpdateStatusRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -43,7 +44,7 @@ public class OrderController {
     }
 
     @GetMapping
-    public PageResponse<OrderResponse> list(@Valid @ModelAttribute ListQuery query) {
+    public PageResponse<OrderResponse> list(@Valid @ModelAttribute @ParameterObject ListQuery query) {
         return orderService.list(query.status(), query.page(), query.size());
     }
 
@@ -79,6 +80,13 @@ public class OrderController {
      * <p>The compact constructor supplies the defaults that {@code @RequestParam(defaultValue)}
      * used to: an absent parameter binds to {@code null}, not to a value that would fail
      * validation.
+     *
+     * <p>{@code @ParameterObject} on the method parameter is required for the OpenAPI spec, not
+     * for binding. Without it springdoc documents this record as a single opaque {@code query}
+     * parameter with a {@code $ref} to a {@code ListQuery} schema, and Swagger UI renders one
+     * unusable "query * object" box instead of three fields. With it, springdoc flattens the
+     * record into the three separate {@code status}/{@code page}/{@code size} query parameters
+     * that the endpoint actually accepts. See {@code SwaggerIntegrationTest}.
      */
     public record ListQuery(OrderStatus status, @Min(0) Integer page, @Min(1) Integer size) {
 
