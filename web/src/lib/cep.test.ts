@@ -15,8 +15,6 @@ describe("cep", () => {
     expect(maskCep("")).toBe("");
   });
 
-  // TRAP 3: the API rejects "01001-000" — zipCode is exactly 8 chars, no mask.
-  // What the UI displays must strip back to exactly 8 digits before submit.
   it("round-trips a masked display value back to exactly 8 digits", () => {
     for (const typed of ["01310-100", "01310100", "01.310-100", " 01310-100 "]) {
       const digits = stripCep(typed);

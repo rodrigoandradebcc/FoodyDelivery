@@ -18,10 +18,6 @@ describe("parseBRLToCents", () => {
     expect(parseBRLToCents("0,5")).toBe(50);
   });
 
-  // TRAP 2: `parseFloat("49.90") * 100` is 4989.999999999999, and
-  // `parseFloat("1.15") * 100` is 114.99999999999999. Any implementation that
-  // routes through a float and truncates loses a cent on exactly these values,
-  // so they are asserted explicitly and the results must be integers.
   it("is float-safe: never loses a cent to binary rounding", () => {
     expect(parseBRLToCents("49,90")).toBe(4990);
     expect(parseBRLToCents("1,15")).toBe(115);

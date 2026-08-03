@@ -1,0 +1,78 @@
+.auth-page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: var(--sp-4);
+}
+
+.auth-card {
+  width: min(100%, 26rem);
+  padding: clamp(var(--sp-5), 5vw, var(--sp-6));
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.auth-brand {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+}
+.auth-brand span {
+  color: var(--accent);
+}
+
+.auth-sub {
+  color: var(--ink-soft);
+  margin-top: calc(-1 * var(--sp-3));
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+
+.auth-alert {
+  padding: var(--sp-3);
+  border-radius: var(--r-md);
+  background: var(--st-cancelado-bg);
+  color: var(--danger);
+  font-size: var(--text-sm);
+}
+.auth-alert-info {
+  background: var(--st-recebido-bg);
+  color: var(--st-recebido-ink);
+}
+
+.auth-alt {
+  font-size: var(--text-sm);
+  color: var(--ink-soft);
+  text-align: center;
+}
+.auth-alt a {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.pw-wrap {
+  position: relative;
+}
+.pw-wrap > input {
+  width: 100%;
+  padding-right: 5.5rem;
+}
+.pw-toggle {
+  position: absolute;
+  right: var(--sp-2);
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  min-height: 36px;
+  padding: 0 var(--sp-2);
+}

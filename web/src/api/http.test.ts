@@ -7,11 +7,6 @@ afterEach(() => {
   setTokenProvider(() => null);
 });
 
-/**
- * Typed rejection helper. `promise.catch((e) => e)` widens to `any`, which is
- * banned here, and it also lets a test pass when the promise resolves. This
- * asserts the rejection and hands back a properly typed ApiError.
- */
 async function rejectsWithApiError(promise: Promise<unknown>): Promise<ApiError> {
   try {
     await promise;
@@ -29,10 +24,6 @@ function stubFetch(impl: () => Response): ReturnType<typeof vi.fn<typeof fetch>>
 }
 
 describe("request", () => {
-  // TRAP 1a: Spring Security's filter chain rejects a missing/expired token
-  // BEFORE any controller runs. The response is 401 with a ZERO-LENGTH body
-  // and only a WWW-Authenticate header. Calling .json() here throws
-  // SyntaxError, which would surface as a crash instead of a login redirect.
   it("survives the filter-chain 401 (EMPTY body, no JSON) and fires onUnauthorized", async () => {
     stubFetch(() => new Response(null, { status: 401, headers: { "WWW-Authenticate": "Bearer" } }));
     const onUnauthorized = vi.fn();
@@ -41,14 +32,12 @@ describe("request", () => {
     const err = await rejectsWithApiError(request("/orders"));
     expect(err).toBeInstanceOf(ApiError);
     expect(err.status).toBe(401);
-    expect(err.problem).toBeNull(); // did NOT try to parse a body
+    expect(err.problem).toBeNull();
     expect(err.fieldErrors).toEqual([]);
     expect(err.message).toBe("Erro HTTP 401");
     expect(onUnauthorized).toHaveBeenCalledOnce();
   });
 
-  // TRAP 1a, defensive: even if the server ever labels a zero-length body as
-  // problem+json, parsing must degrade to null rather than throw SyntaxError.
   it("does not throw when a JSON content-type carries an empty body", async () => {
     stubFetch(
       () => new Response("", { status: 401, headers: { "Content-Type": "application/problem+json" } }),
@@ -62,10 +51,6 @@ describe("request", () => {
     expect(onUnauthorized).toHaveBeenCalledOnce();
   });
 
-  // TRAP 1b: a failed LOGIN reaches the application and returns a real
-  // ProblemDetail. "Those credentials are wrong" must not be mistaken for
-  // "your session died" — firing onUnauthorized here would bounce the user
-  // off the login page they are standing on.
   it("does NOT fire onUnauthorized for auth-less calls (login failure)", async () => {
     stubFetch(
       () =>
@@ -107,7 +92,7 @@ describe("request", () => {
       { field: "deliveryAddress.zipCode", message: "tamanho deve ser 8" },
       { field: "items[0].quantity", message: "deve ser maior ou igual a 1" },
     ]);
-    // Task 7 maps these onto form inputs by exact path — no rewriting allowed.
+
     expect(err.fieldErrors.map((f) => f.field)).toEqual([
       "deliveryAddress.zipCode",
       "items[0].quantity",
