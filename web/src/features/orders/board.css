@@ -214,3 +214,61 @@
   box-shadow: var(--shadow-md);
   font-size: var(--text-sm);
 }
+
+.mboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.mtabs {
+  display: flex;
+  gap: var(--sp-2);
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none;
+  position: sticky;
+  top: 68px;
+  background: var(--bg);
+  z-index: 10;
+  padding: var(--sp-1) 0;
+}
+.mtabs::-webkit-scrollbar {
+  display: none;
+}
+
+.mtab {
+  scroll-snap-align: start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  white-space: nowrap;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  touch-action: manipulation;
+}
+.mtab-count {
+  background: var(--surface-dim);
+  border-radius: 999px;
+  padding: 0 var(--sp-2);
+  font-size: 0.75rem;
+}
+.mtab-exit {
+  border-left: 1px solid var(--line);
+  margin-left: var(--sp-2);
+  padding-left: var(--sp-4);
+  opacity: 0.8;
+}
+
+.mboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
