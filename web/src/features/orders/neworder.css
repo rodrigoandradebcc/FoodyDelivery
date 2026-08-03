@@ -8,6 +8,7 @@
 
 .no-section {
   border: none;
+  min-inline-size: 0;
   padding: var(--sp-4);
   display: flex;
   flex-direction: column;
@@ -26,6 +27,15 @@
   grid-template-columns: 1fr 8.5rem 5rem auto;
   gap: var(--sp-2);
   align-items: start;
+}
+.no-item-row > *,
+.no-addr-grid > * {
+  min-width: 0;
+}
+.no-item-row input,
+.no-addr-grid input,
+.no-addr-grid select {
+  width: 100%;
 }
 .no-item-remove {
   align-self: end;
