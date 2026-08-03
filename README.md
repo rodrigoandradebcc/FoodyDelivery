@@ -273,6 +273,6 @@ Migrations em `src/main/resources/db/migration/`.
 
 ## Testes
 
-102 testes, todos verdes (`./mvnw test`): a matriz 5×5 completa da máquina de estados,
-validação de DTOs, `OrderService` com Mockito, e integração ponta a ponta de auth,
-pedidos, persistência, segurança e OpenAPI sobre SQLite em arquivo temporário.
+111 testes, todos verdes (`./mvnw test`): a matriz 5×5 completa da máquina de estados,
+validação de DTOs, `OrderService` e `AuthService` com Mockito, e integração ponta a ponta
+de auth, pedidos, persistência, segurança e OpenAPI sobre SQLite em arquivo temporário.
