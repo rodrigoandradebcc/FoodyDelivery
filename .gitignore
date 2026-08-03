@@ -14,3 +14,9 @@ web/dist/
 web/.vite/
 web/*.local
 npm-debug.log*
+
+# tooling local (não faz parte da entrega)
+.claude/
+.agents/
+skills-lock.json
+docs/superpowers/
