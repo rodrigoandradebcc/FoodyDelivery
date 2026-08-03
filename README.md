@@ -8,8 +8,10 @@ REST API de delivery: cadastro/login com JWT e gestão de pedidos com máquina d
 
 ## Como rodar
 
-Pré-requisito único: **JDK 21**. Sem Docker, sem banco instalado, sem serviço externo —
-o SQLite é embutido e o Maven Wrapper baixa o próprio Maven.
+Para subir a aplicação o pré-requisito é um só: **JDK 21**. Sem Docker, sem banco instalado,
+sem serviço externo — o SQLite é embutido e o Maven Wrapper baixa o próprio Maven. (O bloco
+de exemplos em "Fluxo completo" usa também `curl` e `python3`, mas isso é do exemplo, não da
+aplicação.)
 
 ```bash
 ./mvnw spring-boot:run
@@ -50,6 +52,15 @@ Ambos são públicos. Use o botão **Authorize** com o `accessToken` devolvido p
 | `GET` | `/api/v1/orders/{id}` | Bearer JWT | `200` |
 | `PATCH` | `/api/v1/orders/{id}/status` | Bearer JWT | `200` |
 
+Parâmetros da listagem, todos opcionais: `status` (um valor do enum; ausente = sem filtro),
+`page` (padrão `0`, mínimo `0`) e `size` (**padrão `20`**, mínimo `1`, sem máximo — ver
+limitação 2). Fora desses limites a resposta é `400`.
+
+Regras de cadastro que valem conhecer antes do primeiro `POST /auth/register`: `name` até
+120 caracteres, `email` válido e único, e **`password` entre 8 e 72 caracteres** (o teto de
+72 é do BCrypt, e é medido em *bytes* — ver "Decisões"). Senha curta demais devolve `400`
+com o campo apontado na extensão `errors`.
+
 Erros seguem **RFC 7807 (`application/problem+json`)**: `400` validação (com a extensão
 `errors`, um objeto por campo inválido), `401` credenciais inválidas, `404` pedido
 inexistente, `409` transição de status inválida ou e-mail já cadastrado.
@@ -74,6 +85,10 @@ servidor rodando.
 
 ## Fluxo completo (curl)
 
+O bloco abaixo roda de ponta a ponta se colado inteiro no `bash`/`zsh` — os passos 2 e 3
+guardam o token e o id do pedido em variáveis, então não há nada para editar à mão. Além do
+`curl`, usa `python3` (só para extrair um campo do JSON; qualquer outro extrator serve).
+
 ```bash
 # 1. Registrar
 curl -s -X POST http://localhost:8080/api/v1/auth/register \
@@ -87,7 +102,8 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   python3 -c 'import json,sys; print(json.load(sys.stdin)["accessToken"])')
 
 # 3. Criar pedido (201 + header Location; totalCents calculado no servidor = 11480)
-curl -si -X POST http://localhost:8080/api/v1/orders \
+#    Guarda o id do pedido em $ID para os passos seguintes.
+ID=$(curl -s -X POST http://localhost:8080/api/v1/orders \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{
     "items": [
@@ -98,26 +114,27 @@ curl -si -X POST http://localhost:8080/api/v1/orders \
       "street": "Rua das Flores", "number": "100", "complement": null,
       "district": "Centro", "city": "São Paulo", "state": "SP", "zipCode": "01001000"
     }
-  }'
+  }' | python3 -c 'import json,sys; print(json.load(sys.stdin)["id"])')
+echo "pedido criado: $ID"
 
 # 4. Listar (paginado; filtro opcional ?status=RECEBIDO)
 curl -s "http://localhost:8080/api/v1/orders?page=0&size=10" \
   -H "Authorization: Bearer $TOKEN"
 
-# 5. Buscar por id (use o id retornado no passo 3)
-curl -s http://localhost:8080/api/v1/orders/<ID> -H "Authorization: Bearer $TOKEN"
+# 5. Buscar por id
+curl -s "http://localhost:8080/api/v1/orders/$ID" -H "Authorization: Bearer $TOKEN"
 
 # 6. Avançar status (RECEBIDO → EM_PREPARO)
-curl -s -X PATCH http://localhost:8080/api/v1/orders/<ID>/status \
+curl -s -X PATCH "http://localhost:8080/api/v1/orders/$ID/status" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"status": "EM_PREPARO"}'
 
 # 7. Transição ilegal (EM_PREPARO → ENTREGUE) → 409 ProblemDetail
-curl -s -X PATCH http://localhost:8080/api/v1/orders/<ID>/status \
+curl -s -X PATCH "http://localhost:8080/api/v1/orders/$ID/status" \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{"status": "ENTREGUE"}'
 # {"detail":"Cannot change status from EM_PREPARO to ENTREGUE",
-#  "instance":"/api/v1/orders/<ID>/status","status":409,
+#  "instance":"/api/v1/orders/<id>/status","status":409,
 #  "title":"Invalid status transition"}
 
 # 8. Sem token → 401
@@ -215,18 +232,33 @@ escopo de um exercício.
 
 ### Nota para quem for mexer no código
 
-`OrderController.list` carrega **duas** anotações no mesmo parâmetro, `@ModelAttribute` e
-`@ParameterObject`, e cada uma é load-bearing por um motivo diferente:
+`OrderController.list` recebe os filtros como um **objeto** (`ListQuery`) em vez de três
+`@RequestParam` soltos. Isso é intencional: `OrderService.list` passa `page`/`size` direto
+para `PageRequest.of`, que lança `IllegalArgumentException` para `page < 0` ou `size < 1`, e
+o `ApiExceptionHandler` **não** trata essa exceção (de propósito, para que bugs internos
+continuem `500`). Com `@RequestParam`s, `?page=-1` seria um `500`. Ligar `@Validated` +
+`@Min` nos params só trocaria a falha por `ConstraintViolationException`, que também não é
+tratada — `500` de novo. Bindando num objeto, a falha vira
+`MethodArgumentNotValidException`, que o handler já converte no `400` padrão com a extensão
+`errors`.
 
-- `@ModelAttribute` faz a falha de binding virar `MethodArgumentNotValidException` — que o
-  handler já converte em `400`. Sem ela, `?page=-1` estoura em `PageRequest.of` e vira
-  `500`.
-- `@ParameterObject` só afeta o documento OpenAPI: sem ela o springdoc documenta o record
-  como um único parâmetro opaco `query` e o Swagger UI renderiza uma caixa inutilizável no
-  lugar dos três campos.
+O parâmetro carrega duas anotações, e **elas não têm o mesmo peso** — o que vale é o binding
+como objeto, não a anotação `@ModelAttribute`:
 
-Remover qualquer uma delas degrada algo **silenciosamente** (uma em runtime, outra só na
-documentação). Não é redundância.
+- **`@ModelAttribute` não é load-bearing.** O `ServletModelAttributeMethodProcessor` de
+  último recurso do Spring é registrado com `annotationNotRequired = true`, então ele pega
+  esse parâmetro (não-simples) e respeita o `@Valid` com ou sem a anotação. Comprovado por
+  experimento: removendo `@ModelAttribute`, a suíte inteira continua passando 102/102,
+  incluindo os três testes de validação da listagem. Ela fica no código só por deixar a
+  intenção explícita.
+- **`@ParameterObject` é a que quebra em silêncio se sumir.** Ela não afeta o binding, só o
+  documento OpenAPI: sem ela o springdoc documenta o record como um único parâmetro opaco
+  `query` e o Swagger UI renderiza uma caixa inutilizável no lugar dos três campos. O
+  runtime continua funcionando igual — nada além do spec gerado denuncia. Removendo,
+  `SwaggerIntegrationTest` falha com `parameters.length() expected:<3> but was:<1>`.
+
+Ou seja: pode-se remover `@ModelAttribute` sem quebrar nada; trocar o objeto por
+`@RequestParam`s, ou remover `@ParameterObject`, quebra.
 
 ---
 
