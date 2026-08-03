@@ -38,7 +38,7 @@ VITE_API_BASE_URL=http://outro-host:8080/api/v1 npm run dev
 ## Testes e build
 
 ```bash
-npm test        # unitários (vitest): dinheiro em centavos, CEP, cliente HTTP
+npm test        # unitários (vitest): dinheiro em centavos, CEP, ViaCEP, cliente HTTP
 npm run build   # typecheck + build de produção
 npm run preview # serve o build em http://localhost:4173 (origem liberada no CORS)
 npm run lint    # oxlint
@@ -54,7 +54,9 @@ npm run lint    # oxlint
 - **Mobile (<1024px)**: o quadro vira abas de status (filtros) com lista única.
 - **Formulários com react-hook-form**: validação no blur e os erros de
   validação da API (`errors[]` do ProblemDetail) voltam para o campo exato.
-- **CEP** é exibido com máscara (`01310-100`) e enviado como 8 dígitos puros.
+- **CEP** é exibido com máscara (`01310-100`) e enviado como 8 dígitos puros. Ao completar
+  8 dígitos, o endereço é buscado no **ViaCEP** e preenchido automaticamente; se o CEP não
+  existir ou o serviço não responder, o formulário continua editável à mão.
 - **Sessão**: o token JWT expira em 1h e é invalidado quando o backend
   reinicia; qualquer 401 derruba a sessão para a tela de login com aviso.
 - Dependências de runtime: React, react-router, TanStack Query,

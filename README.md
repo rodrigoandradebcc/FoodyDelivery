@@ -7,8 +7,8 @@ Delivery em duas metades no mesmo repositório:
 | **API** | REST com cadastro/login JWT e pedidos com máquina de estados | raiz (`src/`) | `8080` |
 | **Web** | Quadro Kanban de pedidos, criação de pedido, login/registro | [`web/`](web/README.md) | `5173` |
 
-**API:** Java 21 · Spring Boot 4.1 · SQLite · Flyway · Spring Security (resource server) · springdoc/OpenAPI
-**Web:** Vite · React 19 · TypeScript · react-router · TanStack Query · react-hook-form
+- **API:** Java 21 · Spring Boot 4.1 · SQLite · Flyway · Spring Security (resource server) · springdoc/OpenAPI
+- **Web:** Vite · React 19 · TypeScript · react-router · TanStack Query · react-hook-form
 
 Este README documenta a API; o front tem o seu em [`web/README.md`](web/README.md).
 
@@ -321,7 +321,8 @@ O front espelha essa organização por feature:
 
 ```
 web/src
-├── api/                cliente HTTP tipado (request, ApiError/ProblemDetail) e endpoints
+├── api/                cliente HTTP tipado (request, ApiError/ProblemDetail), endpoints
+│                       da API e a consulta de CEP (ViaCEP)
 ├── auth/               AuthProvider, useAuth, RequireAuth
 ├── components/         AppShell (header + Outlet)
 ├── features/orders/    BoardPage, Column, OrderCard, CanceledTray, MobileBoard,
@@ -337,9 +338,8 @@ web/src
 validação de DTOs, `OrderService` e `AuthService` com Mockito, e integração ponta a ponta
 de auth, pedidos, persistência, segurança e OpenAPI sobre SQLite em arquivo temporário.
 
-**Web — 17 testes** (`cd web && npm test`): dinheiro em centavos (incluindo os casos em que
-um round-trip por float perderia um centavo), máscara/strip de CEP, e o cliente HTTP contra
+**Web — 22 testes** (`cd web && npm test`): dinheiro em centavos (incluindo os casos em que
+um round-trip por float perderia um centavo), máscara/strip de CEP, a consulta ao ViaCEP
+(inclusive CEP inexistente, falha de rede e requisição cancelada), e o cliente HTTP contra
 as duas formas de 401 da API (filtro do Spring Security com corpo vazio × ProblemDetail de
 login inválido). `npm run build` roda o typecheck junto.
-# FoodyDelivery
-# FoodyDelivery
