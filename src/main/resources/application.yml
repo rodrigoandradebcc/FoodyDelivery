@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: foody-delivery
+  datasource:
+    url: jdbc:sqlite:./data/foody.db?journal_mode=WAL&busy_timeout=5000
+    driver-class-name: org.sqlite.JDBC
+  jpa:
+    database-platform: org.hibernate.community.dialect.SQLiteDialect
+    hibernate:
+      ddl-auto: validate     # schema comes from Flyway
+    open-in-view: false

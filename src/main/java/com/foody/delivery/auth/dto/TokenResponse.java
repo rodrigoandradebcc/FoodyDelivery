@@ -1,0 +1,4 @@
+package com.foody.delivery.auth.dto;
+
+public record TokenResponse(String accessToken, String tokenType, long expiresIn) {
+}
