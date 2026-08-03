@@ -16,7 +16,8 @@ npm install
 npm run dev
 ```
 
-Abra <http://localhost:5173>. Crie uma conta em "Crie sua conta" e pronto —
+Abra <http://localhost:5173>. Entre com a conta de demonstração semeada pelo
+backend (**demo@foody.dev** / **senha1234**) ou crie a sua em "Crie sua conta" —
 o quadro mostra as quatro etapas do pedido; pedidos cancelados ficam na
 bandeja "Cancelados" abaixo do quadro (cancelamento é uma saída do fluxo,
 não uma etapa).

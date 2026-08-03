@@ -18,7 +18,12 @@ aplicação.)
 ```
 
 A API sobe em `http://localhost:8080`. Na primeira subida o Flyway cria o banco em
-`./data/foody.db` e aplica as duas migrations. Não há passo de setup manual.
+`./data/foody.db` e aplica as migrations. Não há passo de setup manual.
+
+A migration `V3__seed_demo_data.sql` semeia uma conta de demonstração
+(**demo@foody.dev** / **senha1234**) e seis pedidos cobrindo todos os status,
+para que o quadro apareça populado num checkout novo. Para subir sem os dados
+de demonstração, apague esse arquivo antes da primeira execução.
 
 ### Frontend (web/)
 
