@@ -1,12 +1,9 @@
 import { Route, Routes } from "react-router";
 import { RequireAuth } from "./auth/auth";
 import AppShell from "./components/AppShell";
+import BoardPage from "./features/orders/BoardPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
-
-function BoardPlaceholder() {
-  return <p>Quadro de pedidos — chega na Task 5.</p>;
-}
 
 export default function App() {
   return (
@@ -20,7 +17,7 @@ export default function App() {
           </RequireAuth>
         }
       >
-        <Route index element={<BoardPlaceholder />} />
+        <Route index element={<BoardPage />} />
       </Route>
     </Routes>
   );
