@@ -40,13 +40,21 @@ class OrderServiceTest {
     @InjectMocks
     private OrderService orderService;
 
+    /**
+     * Both address mappings are 7 positional String arguments, so a street/district or
+     * city/district transposition is invisible to the compiler and can only be caught by
+     * asserting every component. The seven values below are deliberately PAIRWISE
+     * DISTINCT -- if any two matched, a swap between exactly those two would still pass.
+     * complement is non-null here so it takes part in that guarantee;
+     * {@link #nullComplementSurvivesBothDirections()} covers the nullable case separately.
+     */
     private static AddressDto anyAddress() {
-        return new AddressDto("Rua das Flores", "100", null, "Centro",
+        return new AddressDto("Rua das Flores", "100", "Apto 42", "Centro",
                 "São Paulo", "SP", "01001000");
     }
 
     private static Address anyDomainAddress() {
-        return new Address("Rua das Flores", "100", null, "Centro",
+        return new Address("Rua das Flores", "100", "Apto 42", "Centro",
                 "São Paulo", "SP", "01001000");
     }
 
@@ -102,6 +110,47 @@ class OrderServiceTest {
         assertThat(saved.getValue().getItems()).hasSize(2);
     }
 
+    /**
+     * The REQUEST direction, OrderMapper.toAddress: DTO -> domain. Asserted against the
+     * domain object rather than by round-tripping back to a DTO, because a transposition
+     * present in BOTH toAddress and toResponse would cancel out in a round trip and leave
+     * the wrong values in the database.
+     */
+    @Test
+    void createMapsEveryAddressComponentIntoTheDomain() {
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+        ArgumentCaptor<Order> saved = ArgumentCaptor.forClass(Order.class);
+
+        orderService.create("user-1", requestWithTwoItems());
+
+        verify(orderRepository).save(saved.capture());
+        Address address = saved.getValue().getDeliveryAddress();
+        assertThat(address.getStreet()).isEqualTo("Rua das Flores");
+        assertThat(address.getNumber()).isEqualTo("100");
+        assertThat(address.getComplement()).isEqualTo("Apto 42");
+        assertThat(address.getDistrict()).isEqualTo("Centro");
+        assertThat(address.getCity()).isEqualTo("São Paulo");
+        assertThat(address.getState()).isEqualTo("SP");
+        assertThat(address.getZipCode()).isEqualTo("01001000");
+    }
+
+    /** complement is the one nullable address component; it must stay null both ways. */
+    @Test
+    void nullComplementSurvivesBothDirections() {
+        when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
+        ArgumentCaptor<Order> saved = ArgumentCaptor.forClass(Order.class);
+        CreateOrderRequest request = new CreateOrderRequest(
+                List.of(new OrderItemRequest("Pizza Calabresa", 4990L, 2)),
+                new AddressDto("Rua das Flores", "100", null, "Centro",
+                        "São Paulo", "SP", "01001000"));
+
+        OrderResponse response = orderService.create("user-1", request);
+
+        verify(orderRepository).save(saved.capture());
+        assertThat(saved.getValue().getDeliveryAddress().getComplement()).isNull();
+        assertThat(response.deliveryAddress().complement()).isNull();
+    }
+
     @Test
     void validTransitionUpdatesStatus() {
         Order order = Order.place("user-1",
@@ -153,7 +202,18 @@ class OrderServiceTest {
         assertThat(response.totalCents()).isEqualTo(4990L * 3);
         assertThat(response.items()).singleElement()
                 .satisfies(item -> assertThat(item.productName()).isEqualTo("Pizza"));
-        assertThat(response.deliveryAddress().city()).isEqualTo("São Paulo");
+
+        // The RESPONSE direction, OrderMapper.toResponse: domain -> DTO. All seven
+        // components asserted; the address is built from 7 positional Strings, so a
+        // transposition between any two of them is otherwise silent.
+        AddressDto address = response.deliveryAddress();
+        assertThat(address.street()).isEqualTo("Rua das Flores");
+        assertThat(address.number()).isEqualTo("100");
+        assertThat(address.complement()).isEqualTo("Apto 42");
+        assertThat(address.district()).isEqualTo("Centro");
+        assertThat(address.city()).isEqualTo("São Paulo");
+        assertThat(address.state()).isEqualTo("SP");
+        assertThat(address.zipCode()).isEqualTo("01001000");
     }
 
     @Test

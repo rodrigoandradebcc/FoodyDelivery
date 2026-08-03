@@ -211,12 +211,20 @@ class CreateOrderRequestValidationTest {
         assertThat(pathsOf(tooShort)).containsExactly("deliveryAddress.state");
     }
 
+    /**
+     * Both sides, like stateMustBeExactlyTwoCharacters: testing only the 9-character
+     * formatted CEP would still pass if the constraint lost its min and became
+     * {@code @Size(max = 8)}.
+     */
     @Test
     void zipCodeMustBeExactlyEightCharacters() {
         CreateOrderRequest withDash = new CreateOrderRequest(List.of(validItem()),
                 new AddressDto("Rua", "100", null, "Centro", "São Paulo", "SP", "01001-000"));
+        CreateOrderRequest tooShort = new CreateOrderRequest(List.of(validItem()),
+                new AddressDto("Rua", "100", null, "Centro", "São Paulo", "SP", "0100100"));
 
         assertThat(pathsOf(withDash)).containsExactly("deliveryAddress.zipCode");
+        assertThat(pathsOf(tooShort)).containsExactly("deliveryAddress.zipCode");
     }
 
     /** complement is the one nullable address field; the valid-request test above
