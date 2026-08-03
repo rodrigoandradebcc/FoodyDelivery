@@ -9,10 +9,12 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -87,6 +89,41 @@ class AuthFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.title").value("Validation failed"))
                 .andExpect(jsonPath("$.errors").isArray())
                 .andExpect(jsonPath("$.errors").isNotEmpty());
+    }
+
+    /**
+     * BCrypt's limit is 72 BYTES; {@code @Size(max = 72)} only counts characters. Nineteen
+     * emoji are 38 characters but 76 bytes, so before the {@code @MaxBytes} constraint this
+     * payload sailed past validation and blew up inside {@code BCryptPasswordEncoder.encode}
+     * with an {@code IllegalArgumentException}, which no advice handles — an HTTP 500 with a
+     * non-ProblemDetail body. It must now be an ordinary 400 that names the field.
+     */
+    @Test
+    void passwordOver72BytesReturns400NotAn500() throws Exception {
+        String emojiPassword = "🍕".repeat(19); // 38 chars, 76 UTF-8 bytes
+        assertThat(emojiPassword.length()).isLessThanOrEqualTo(72);
+        assertThat(emojiPassword.getBytes(StandardCharsets.UTF_8).length).isGreaterThan(72);
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name": "Rodrigo", "email": "%s", "password": "%s"}
+                                """.formatted(uniqueEmail(), emojiPassword)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[*].field", hasItem("password")));
+    }
+
+    /**
+     * Guards {@link AuthService#DUMMY_PASSWORD_HASH}: if that constant were ever mangled into
+     * something BCrypt does not recognise, {@code matches} would bail out immediately instead
+     * of doing a full verification, and the unknown-e-mail timing leak would silently return.
+     * A timing assertion would be flaky, so this pins the property that makes the work real.
+     */
+    @Test
+    void dummyPasswordHashIsAGenuineBcrypt10Hash() {
+        assertThat(AuthService.DUMMY_PASSWORD_HASH).matches("^\\$2a\\$10\\$[./A-Za-z0-9]{53}$");
     }
 
     @Test
