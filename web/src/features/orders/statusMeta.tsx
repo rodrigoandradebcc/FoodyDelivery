@@ -104,6 +104,14 @@ export const ADVANCE_LABEL: Record<OrderStatus, string | null> = {
   CANCELADO: null,
 };
 
+export const EMPTY_HINT: Record<OrderStatus, string> = {
+  RECEBIDO: "Nenhum pedido novo.",
+  EM_PREPARO: "Nada na cozinha agora.",
+  SAIU_PARA_ENTREGA: "Nenhuma entrega em rota.",
+  ENTREGUE: "Nenhuma entrega concluída ainda.",
+  CANCELADO: "Nenhum pedido cancelado.",
+};
+
 export const CAN_CANCEL: Record<OrderStatus, boolean> = {
   RECEBIDO: true,
   EM_PREPARO: true,

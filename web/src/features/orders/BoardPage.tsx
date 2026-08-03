@@ -28,6 +28,10 @@ export default function BoardPage() {
   return (
     <div className="board-page">
       <h1 className="board-title">Pedidos</h1>
+      <p className="board-lede">
+        Cada pedido segue as quatro etapas abaixo. Cancelar tira o pedido do fluxo — os
+        cancelados ficam na bandeja no fim do quadro.
+      </p>
 
       {isDesktop ? (
         <>

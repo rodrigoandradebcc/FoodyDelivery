@@ -1,4 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   Controller,
   useFieldArray,
@@ -8,13 +9,16 @@ import {
   type FieldPath,
   type SubmitHandler,
 } from "react-hook-form";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { ApiError } from "../../api/http";
 import { createOrder } from "../../api/orders";
 import type { CreateOrderRequest } from "../../api/types";
+import { CepNotFoundError, lookupCep } from "../../api/viacep";
 import { maskCep, stripCep } from "../../lib/cep";
 import { formatCentsBRL, parseBRLToCents } from "../../lib/money";
 import "./neworder.css";
+
+type CepStatus = "idle" | "loading" | "filled";
 
 const UFS = [
   "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG",
@@ -66,28 +70,58 @@ function parseQuantity(value: string): number {
   return Number.parseInt(value, 10);
 }
 
+function PlusIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M8 3.5v9M3.5 8h9" />
+    </svg>
+  );
+}
+
 function LiveTotal({ control }: { control: Control<NewOrderForm> }) {
   const items = useWatch({ control, name: "items" });
-  const totalCents = (items ?? []).reduce((sum, row) => {
+  const rows = items ?? [];
+  const totalCents = rows.reduce((sum, row) => {
     const cents = parseBRLToCents(row?.price ?? "");
     const qty = parseQuantity(row?.quantity ?? "");
     return cents !== null && Number.isInteger(qty) && qty >= 1 ? sum + cents * qty : sum;
   }, 0);
+  const units = rows.reduce((sum, row) => {
+    const qty = parseQuantity(row?.quantity ?? "");
+    return Number.isInteger(qty) && qty >= 1 ? sum + qty : sum;
+  }, 0);
 
   return (
-    <span>
-      Total: <strong className="mono no-total">{formatCentsBRL(totalCents)}</strong>
-    </span>
+    <div className="no-total-block">
+      <span className="no-total-label">
+        Total · {units} {units === 1 ? "item" : "itens"}
+      </span>
+      <strong className="mono no-total">{formatCentsBRL(totalCents)}</strong>
+    </div>
   );
 }
 
 export default function NewOrderPage() {
   const navigate = useNavigate();
+  const [cepStatus, setCepStatus] = useState<CepStatus>("idle");
+  const cepRequest = useRef<AbortController | null>(null);
   const {
     control,
     register,
     handleSubmit,
     setError,
+    setValue,
+    setFocus,
+    clearErrors,
     formState: { errors },
   } = useForm<NewOrderForm>({
     mode: "onBlur",
@@ -106,6 +140,40 @@ export default function NewOrderPage() {
   });
 
   const { fields, append, remove } = useFieldArray({ control, name: "items" });
+
+  useEffect(() => () => cepRequest.current?.abort(), []);
+
+  async function fillFromCep(digits: string) {
+    cepRequest.current?.abort();
+    if (digits.length !== 8) {
+      setCepStatus("idle");
+      return;
+    }
+
+    const controller = new AbortController();
+    cepRequest.current = controller;
+    setCepStatus("loading");
+    clearErrors("deliveryAddress.zipCode");
+
+    try {
+      const addr = await lookupCep(digits, controller.signal);
+      setValue("deliveryAddress.street", addr.street, { shouldValidate: true });
+      setValue("deliveryAddress.district", addr.district, { shouldValidate: true });
+      setValue("deliveryAddress.city", addr.city, { shouldValidate: true });
+      setValue("deliveryAddress.state", addr.state, { shouldValidate: true });
+      setCepStatus("filled");
+      setFocus("deliveryAddress.number");
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      setCepStatus("idle");
+      setError("deliveryAddress.zipCode", {
+        message:
+          err instanceof CepNotFoundError
+            ? "CEP não encontrado. Preencha o endereço manualmente."
+            : "Não foi possível consultar o CEP. Preencha o endereço manualmente.",
+      });
+    }
+  }
 
   const mutation = useMutation({
     mutationFn: (req: CreateOrderRequest) => createOrder(req),
@@ -156,7 +224,17 @@ export default function NewOrderPage() {
 
   return (
     <form className="neworder" onSubmit={handleSubmit(onSubmit)} noValidate>
-      <h1>Novo pedido</h1>
+      <header className="no-head">
+        <Link to="/" className="no-back">
+          Voltar ao quadro
+        </Link>
+        <h1>Novo pedido</h1>
+        <p className="no-lede">
+          Preços em reais, como você digitaria na comanda — "45,90". O total é calculado
+          enquanto você escreve.
+        </p>
+      </header>
+
       {formError && (
         <p className="auth-alert" role="alert">
           {formError}
@@ -221,30 +299,73 @@ export default function NewOrderPage() {
                   </span>
                 )}
               </div>
-              <button
-                type="button"
-                className="btn btn-sm btn-danger-ghost no-item-remove"
-                disabled={fields.length === 1}
-                onClick={() => remove(i)}
-              >
-                Remover
-              </button>
+              {fields.length > 1 && (
+                <button
+                  type="button"
+                  className="btn btn-sm btn-danger-ghost no-item-remove"
+                  onClick={() => remove(i)}
+                >
+                  Remover
+                </button>
+              )}
             </div>
           );
         })}
         <button
           type="button"
-          className="btn btn-ghost"
+          className="btn btn-sm btn-ghost no-item-add"
           onClick={() => append({ ...EMPTY_ITEM })}
         >
-          + Adicionar item
+          <PlusIcon />
+          Adicionar item
         </button>
       </fieldset>
 
       <fieldset className="no-section card">
         <legend>Endereço de entrega</legend>
         <div className="no-addr-grid">
-          <div className="field no-span2">
+          <div className="field no-cep">
+            <label htmlFor="deliveryAddress.zipCode">CEP</label>
+            <Controller
+              control={control}
+              name="deliveryAddress.zipCode"
+              rules={{ validate: (v) => v.length === 8 || "CEP deve ter 8 dígitos." }}
+              render={({ field }) => {
+                function handleCepChange(event: ChangeEvent<HTMLInputElement>) {
+                  const digits = stripCep(event.target.value);
+                  field.onChange(digits);
+                  void fillFromCep(digits);
+                }
+
+                return (
+                  <input
+                    id="deliveryAddress.zipCode"
+                    inputMode="numeric"
+                    placeholder="00000-000"
+                    autoComplete="postal-code"
+                    aria-invalid={!!addressErrors?.zipCode}
+                    aria-describedby="cep-status"
+                    name={field.name}
+                    ref={field.ref}
+                    onBlur={field.onBlur}
+                    value={maskCep(field.value)}
+                    onChange={handleCepChange}
+                  />
+                );
+              }}
+            />
+            <span id="cep-status" role="status" className="field-hint">
+              {cepStatus === "loading" && "Buscando endereço…"}
+              {cepStatus === "filled" && !addressErrors?.zipCode && "Endereço preenchido pelo ViaCEP."}
+              {cepStatus === "idle" && !addressErrors?.zipCode && "Preenche o endereço automaticamente."}
+            </span>
+            {addressErrors?.zipCode && (
+              <span className="field-error" role="alert">
+                {addressErrors.zipCode.message}
+              </span>
+            )}
+          </div>
+          <div className="field no-street">
             <label htmlFor="deliveryAddress.street">Rua</label>
             <input
               id="deliveryAddress.street"
@@ -262,7 +383,7 @@ export default function NewOrderPage() {
               </span>
             )}
           </div>
-          <div className="field">
+          <div className="field no-number">
             <label htmlFor="deliveryAddress.number">Número</label>
             <input
               id="deliveryAddress.number"
@@ -279,7 +400,7 @@ export default function NewOrderPage() {
               </span>
             )}
           </div>
-          <div className="field">
+          <div className="field no-complement">
             <label htmlFor="deliveryAddress.complement">Complemento (opcional)</label>
             <input
               id="deliveryAddress.complement"
@@ -295,7 +416,7 @@ export default function NewOrderPage() {
               </span>
             )}
           </div>
-          <div className="field">
+          <div className="field no-district">
             <label htmlFor="deliveryAddress.district">Bairro</label>
             <input
               id="deliveryAddress.district"
@@ -312,7 +433,7 @@ export default function NewOrderPage() {
               </span>
             )}
           </div>
-          <div className="field">
+          <div className="field no-city">
             <label htmlFor="deliveryAddress.city">Cidade</label>
             <input
               id="deliveryAddress.city"
@@ -330,7 +451,7 @@ export default function NewOrderPage() {
               </span>
             )}
           </div>
-          <div className="field">
+          <div className="field no-uf">
             <label htmlFor="deliveryAddress.state">UF</label>
             <select
               id="deliveryAddress.state"
@@ -347,33 +468,6 @@ export default function NewOrderPage() {
             {addressErrors?.state && (
               <span className="field-error" role="alert">
                 {addressErrors.state.message}
-              </span>
-            )}
-          </div>
-          <div className="field">
-            <label htmlFor="deliveryAddress.zipCode">CEP</label>
-            <Controller
-              control={control}
-              name="deliveryAddress.zipCode"
-              rules={{ validate: (v) => v.length === 8 || "CEP deve ter 8 dígitos." }}
-              render={({ field }) => (
-                <input
-                  id="deliveryAddress.zipCode"
-                  inputMode="numeric"
-                  placeholder="00000-000"
-                  autoComplete="postal-code"
-                  aria-invalid={!!addressErrors?.zipCode}
-                  name={field.name}
-                  ref={field.ref}
-                  onBlur={field.onBlur}
-                  value={maskCep(field.value)}
-                  onChange={(e) => field.onChange(stripCep(e.target.value))}
-                />
-              )}
-            />
-            {addressErrors?.zipCode && (
-              <span className="field-error" role="alert">
-                {addressErrors.zipCode.message}
               </span>
             )}
           </div>

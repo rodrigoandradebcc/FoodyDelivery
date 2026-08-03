@@ -173,6 +173,9 @@
       transform var(--dur-fast) var(--ease-out);
     background: none;
   }
+  a.btn {
+    text-decoration: none;
+  }
   .btn:active:not(:disabled) {
     transform: scale(0.98);
   }
@@ -344,6 +347,10 @@
     height: var(--icon-lg);
   }
 
+  .tnum,
+  .mono {
+    font-variant-numeric: tabular-nums;
+  }
   .mono {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
