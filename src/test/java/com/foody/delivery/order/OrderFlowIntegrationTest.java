@@ -3,11 +3,17 @@ package com.foody.delivery.order;
 import com.foody.delivery.AbstractIntegrationTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import tools.jackson.databind.JsonNode;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -79,6 +85,25 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(expected);
     }
 
+    /** The order ids in a {@code PageResponse} body, in the order the API returned them. */
+    private List<String> contentIds(String pageResponseBody) {
+        List<String> ids = new ArrayList<>();
+        for (JsonNode order : objectMapper.readTree(pageResponseBody).get("content")) {
+            ids.add(order.get("id").asText());
+        }
+        return ids;
+    }
+
+    private List<String> listOrders(String token, String... params) throws Exception {
+        var request = get("/api/v1/orders").header("Authorization", "Bearer " + token);
+        for (int i = 0; i < params.length; i += 2) {
+            request = request.param(params[i], params[i + 1]);
+        }
+        return contentIds(mockMvc.perform(request)
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+    }
+
     @Test
     void createOrderComputesTotalServerSideAndReturnsLocation() throws Exception {
         String token = authToken();
@@ -101,16 +126,20 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
     @Test
     void locationHeaderPointsAtTheCreatedOrder() throws Exception {
         String token = authToken();
-        String location = mockMvc.perform(post("/api/v1/orders")
+        MockHttpServletResponse created = mockMvc.perform(post("/api/v1/orders")
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(CREATE_ORDER_JSON))
                 .andExpect(status().isCreated())
-                .andReturn().getResponse().getHeader("Location");
+                .andReturn().getResponse();
+        String createdId = objectMapper.readTree(created.getContentAsString()).get("id").asText();
 
-        String path = java.net.URI.create(location).getPath();
+        // Not "some order with the same total" -- every fixture order in this class has the same
+        // total and the database is shared across all 20 tests. It must be THIS order.
+        String path = URI.create(created.getHeader("Location")).getPath();
         mockMvc.perform(get(path).header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(createdId))
                 .andExpect(jsonPath("$.totalCents").value(11480));
     }
 
@@ -239,7 +268,7 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
         String token = authToken();
         String orderId = createOrder(token);
         patchStatus(token, orderId, "EM_PREPARO", status().isOk());
-        createOrder(token);
+        String untouchedOrderId = createOrder(token);
 
         mockMvc.perform(get("/api/v1/orders")
                         .param("page", "0").param("size", "10")
@@ -250,18 +279,36 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.size").value(10))
                 .andExpect(jsonPath("$.totalElements").isNumber());
 
-        mockMvc.perform(get("/api/v1/orders")
+        // everyItem() alone is vacuously true on an empty array: a findByStatus that returned
+        // nothing would pass it. So assert BOTH halves -- no wrong status leaks in, AND the
+        // order that was actually transitioned comes back.
+        String filtered = mockMvc.perform(get("/api/v1/orders")
                         .param("status", "EM_PREPARO")
+                        .param("size", "100")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[*].status", everyItem(is("EM_PREPARO"))));
+                .andExpect(jsonPath("$.content[*].status", everyItem(is("EM_PREPARO"))))
+                .andReturn().getResponse().getContentAsString();
+        assertThat(contentIds(filtered)).contains(orderId);
+
+        // The RECEBIDO order created above is NOT in the EM_PREPARO page.
+        assertThat(contentIds(filtered)).doesNotContain(untouchedOrderId);
     }
 
     /**
      * Multi-order fixture: pagination must really slice the result set, and every returned
-     * order must carry its EAGER-fetched items. {@code Order.items} is {@code fetch = EAGER},
-     * so this is also the fixture that exposes how Hibernate applies the limit (see the
-     * task report for the HHH000104 finding).
+     * order must carry its EAGER-fetched items.
+     *
+     * <p>This is the repo's only durable artifact pinning that {@code offset} is honoured.
+     * Asserting "page 0 has 2 rows and page 1 has 2 rows" is not enough -- an implementation
+     * that ignored the offset and served the same window twice would satisfy it. The pages
+     * must be DISJOINT, and together they must cover the first four rows of the unpaginated
+     * ordering.
+     *
+     * <p>{@code Order.items} is {@code fetch = EAGER}, so this is also the fixture that
+     * exercises how Hibernate applies the limit (see the report: it is applied in SQL as
+     * {@code limit ? offset ?}, with a follow-up select per row for the items -- no
+     * HHH000104, no in-memory pagination).
      */
     @Test
     void listPaginatesAcrossManyOrdersWithEagerItems() throws Exception {
@@ -270,7 +317,7 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
             createOrder(token);
         }
 
-        mockMvc.perform(get("/api/v1/orders")
+        String firstPage = mockMvc.perform(get("/api/v1/orders")
                         .param("page", "0").param("size", "2")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
@@ -279,14 +326,32 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.size").value(2))
                 .andExpect(jsonPath("$.totalElements", greaterThanOrEqualTo(5)))
                 // The EAGER collection survives pagination: each row still has both items.
-                .andExpect(jsonPath("$.content[*].items.length()", everyItem(is(2))));
+                .andExpect(jsonPath("$.content[*].items.length()", everyItem(is(2))))
+                .andReturn().getResponse().getContentAsString();
 
-        mockMvc.perform(get("/api/v1/orders")
+        String secondPage = mockMvc.perform(get("/api/v1/orders")
                         .param("page", "1").param("size", "2")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(2))
-                .andExpect(jsonPath("$.page").value(1));
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.content[*].items.length()", everyItem(is(2))))
+                .andReturn().getResponse().getContentAsString();
+
+        List<String> firstIds = contentIds(firstPage);
+        List<String> secondIds = contentIds(secondPage);
+
+        // The window really moved: no id appears on both pages.
+        assertThat(firstIds).doesNotContainAnyElementsOf(secondIds);
+        assertThat(firstIds).doesNotHaveDuplicates();
+        assertThat(secondIds).doesNotHaveDuplicates();
+
+        // And the two pages are the first four rows of the unpaginated ordering, in order --
+        // so the offset is not merely different, it is the right one.
+        List<String> unpaginated = listOrders(token, "page", "0", "size", "100");
+        List<String> concatenated = new ArrayList<>(firstIds);
+        concatenated.addAll(secondIds);
+        assertThat(concatenated).isEqualTo(unpaginated.subList(0, 4));
     }
 
     /**
@@ -321,13 +386,24 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.errors[*].field", hasItem("size")));
     }
 
+    /**
+     * A status-code-only assertion here would prove nothing new: Spring's
+     * {@code DefaultHandlerExceptionResolver} already maps
+     * {@code MethodArgumentTypeMismatchException} to a bodyless 400, so a plain
+     * {@code @RequestParam OrderStatus} would pass it too. What is actually new is that the
+     * failure now travels the {@code ListQuery} binding path and comes back as the same
+     * ProblemDetail every other validation error uses, naming the offending parameter.
+     */
     @Test
-    void unknownStatusFilterReturns400() throws Exception {
+    void unknownStatusFilterReturns400WithFieldNamedProblemDetail() throws Exception {
         String token = authToken();
         mockMvc.perform(get("/api/v1/orders")
                         .param("status", "NAO_EXISTE")
                         .header("Authorization", "Bearer " + token))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[*].field", hasItem("status")));
     }
 
     @Test
