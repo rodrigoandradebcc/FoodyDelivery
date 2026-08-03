@@ -1,6 +1,8 @@
 # FoodyDelivery
 
-Delivery em duas metades no mesmo repositório:
+Sistema simplificado de rastreamento de pedidos de delivery, feito como desafio técnico:
+uma API REST em Java + Spring Boot com autenticação e máquina de estados de pedidos, e um
+frontend React que mostra os pedidos por status e permite criar novos.
 
 | | O quê | Onde | Porta |
 |---|---|---|---|
@@ -10,7 +12,53 @@ Delivery em duas metades no mesmo repositório:
 - **API:** Java 21 · Spring Boot 4.1 · SQLite · Flyway · Spring Security (resource server) · springdoc/OpenAPI
 - **Web:** Vite · React 19 · TypeScript · react-router · TanStack Query · react-hook-form
 
-Este README documenta a API; o front tem o seu em [`web/README.md`](web/README.md).
+Este README documenta a API e o projeto como um todo; o front tem o seu em
+[`web/README.md`](web/README.md).
+
+**Índice:** [Requisitos do desafio](#requisitos-do-desafio-e-onde-cada-um-está) ·
+[Como rodar](#como-rodar) · [Swagger](#swagger) · [Endpoints](#endpoints) ·
+[Máquina de estados](#máquina-de-estados) · [Fluxo completo (curl)](#fluxo-completo-curl) ·
+[Decisões e porquês](#decisões-e-porquês) · [Limitações conhecidas](#limitações-conhecidas) ·
+[Estrutura](#estrutura) · [Testes](#testes)
+
+---
+
+## Requisitos do desafio e onde cada um está
+
+Cada linha aponta o arquivo principal e como conferir aquele requisito rodando o projeto.
+
+### Back-end
+
+| Requisito | Onde está | Como verificar |
+|---|---|---|
+| Cadastro de usuário (nome, e-mail e senha) | `auth/AuthController` → `AuthService.register` | `POST /api/v1/auth/register` (passo 1 do [fluxo curl](#fluxo-completo-curl)) ou a tela "Crie sua conta" |
+| Login com e-mail e senha | `AuthService.login`, `TokenService` | `POST /api/v1/auth/login` devolve `accessToken` |
+| Apenas usuários autenticados acessam o sistema | `config/SecurityConfig` | `curl -si http://localhost:8080/api/v1/orders` sem token → `401` |
+| Forma de autenticação (a critério) | JWT RS256, par de chaves gerado no boot — ver [Decisões](#decisões-e-porquês) | cole o token no **Authorize** do Swagger |
+| Criar pedido (cliente, itens, endereço) | `order/OrderController.create` → `Order.place` | `POST /api/v1/orders` ou a tela "Novo pedido" |
+| Atualizar o status do pedido | `OrderController.updateStatus` → `Order.changeStatus` | `PATCH /api/v1/orders/{id}/status`, ou os botões do card no quadro |
+| Os cinco status do enunciado | `order/OrderStatus` | `RECEBIDO`, `EM_PREPARO`, `SAIU_PARA_ENTREGA`, `ENTREGUE`, `CANCELADO` |
+| Listar todos os pedidos | `OrderController.list` | `GET /api/v1/orders` (paginado, filtro opcional `?status=`) |
+| Buscar um pedido por ID | `OrderController.getById` | `GET /api/v1/orders/{id}` |
+| Persistência em SQLite | `data/foody.db`, migrations em `src/main/resources/db/migration/` | o arquivo nasce sozinho na primeira execução |
+
+Uma observação sobre **"cliente"**: o pedido pertence ao usuário autenticado que o criou —
+é o `user_id` gravado a partir do token, não um campo do corpo da requisição. Assim não há
+como um cliente criar pedido em nome de outro. A API também não devolve o cliente nas
+respostas de pedido, porque nenhuma tela precisa dele.
+
+### Front-end
+
+| Requisito | Onde está | Como verificar |
+|---|---|---|
+| Aplicação em React | `web/` (React 19 + TypeScript + Vite) | `cd web && npm run dev` |
+| Lista os pedidos com seus status atuais | `web/src/features/orders/BoardPage.tsx` e `Column.tsx` | a tela inicial: uma coluna por etapa |
+| Permite criar um novo pedido | `web/src/features/orders/NewOrderPage.tsx` | botão "Novo pedido" no topo |
+
+### Versionamento
+
+Histórico incremental de commits, um por etapa da implementação — do scaffold da API até o
+frontend (`git log --oneline`). Convenção Conventional Commits.
 
 ---
 
