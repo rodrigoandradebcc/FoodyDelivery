@@ -387,6 +387,30 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
     }
 
     /**
+     * The upper bound matters as much as the lower one: {@code GET /orders} runs
+     * {@code 1 + N + 1} queries per page (EAGER {@code items}), so an unbounded {@code size}
+     * turned {@code ?size=1000000} into an authenticated resource-exhaustion vector. 101 is
+     * the first rejected value under {@code @Max(100)}; 100 must still be accepted, which the
+     * second half asserts so the ceiling cannot drift downwards unnoticed.
+     */
+    @Test
+    void sizeAboveOneHundredReturns400() throws Exception {
+        String token = authToken();
+        mockMvc.perform(get("/api/v1/orders")
+                        .param("size", "101")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[*].field", hasItem("size")));
+
+        mockMvc.perform(get("/api/v1/orders")
+                        .param("size", "100")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+    }
+
+    /**
      * A status-code-only assertion here would prove nothing new: Spring's
      * {@code DefaultHandlerExceptionResolver} already maps
      * {@code MethodArgumentTypeMismatchException} to a bodyless 400, so a plain

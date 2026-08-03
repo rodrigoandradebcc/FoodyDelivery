@@ -8,6 +8,7 @@ import com.foody.delivery.shared.exception.ConflictException;
 import com.foody.delivery.shared.exception.UnauthorizedException;
 import com.foody.delivery.user.User;
 import com.foody.delivery.user.UserRepository;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,16 +48,41 @@ public class AuthService {
         this.tokenService = tokenService;
     }
 
+    /**
+     * The {@code existsByEmail} pre-check and the {@code catch} are BOTH load-bearing, and they
+     * are not redundant. The pre-check is what answers the common sequential case with a good
+     * message; but on its own it is a check-then-insert with a race window — two concurrent
+     * registrations of the same e-mail can both see {@code false}, and the second INSERT then
+     * violates {@code UNIQUE(email)} (V1__create_users.sql) with a
+     * {@code DataIntegrityViolationException}. {@code ApiExceptionHandler} deliberately has no
+     * catch-all, so that used to escape as an HTTP 500. The database constraint always kept the
+     * data correct — no duplicate account was ever created — it was only the status code that
+     * degraded. Translating here makes the racing case answer with the same 409 as the
+     * sequential one.
+     *
+     * <p>{@code saveAndFlush} rather than {@code save} is what makes the catch reachable: with a
+     * plain {@code save} the entity is only queued in the persistence context and the INSERT is
+     * issued at commit, i.e. AFTER this method has returned and outside the try block, so the
+     * exception would never pass through it. Flushing pulls the constraint failure back inside.
+     */
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
-            throw new ConflictException("E-mail already registered",
-                    "An account with e-mail %s already exists".formatted(request.email()));
+            throw emailAlreadyRegistered(request.email());
         }
         User user = User.register(request.name(), request.email(),
                 passwordEncoder.encode(request.password()));
-        userRepository.save(user);
+        try {
+            userRepository.saveAndFlush(user);
+        } catch (DataIntegrityViolationException e) {
+            throw emailAlreadyRegistered(request.email());
+        }
         return new RegisterResponse(user.getId(), user.getName(), user.getEmail());
+    }
+
+    private static ConflictException emailAlreadyRegistered(String email) {
+        return new ConflictException("E-mail already registered",
+                "An account with e-mail %s already exists".formatted(email));
     }
 
     /**

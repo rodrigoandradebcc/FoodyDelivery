@@ -2,8 +2,10 @@ package com.foody.delivery.order;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 class OrderStatusTest {
 
@@ -38,5 +40,22 @@ class OrderStatusTest {
     })
     void transitionMatrix(OrderStatus from, OrderStatus to, boolean allowed) {
         assertThat(from.canTransitionTo(to)).isEqualTo(allowed);
+    }
+
+    /**
+     * Pins the null guard in {@code canTransitionTo}. {@code allowedNext} is a {@code Set.of(...)},
+     * and JDK immutable sets throw {@code NullPointerException} from {@code contains(null)} —
+     * the non-empty ones with "Cannot invoke \"Object.equals(Object)\" because \"o\" is null",
+     * the empty {@code Set.of()} of the terminal states ENTREGUE/CANCELADO with a bare NPE.
+     * Verified by running it against the unguarded version: all five constants threw. So
+     * deleting {@code next != null &&} does not merely change an answer, it turns a null target
+     * into an unhandled 500. This case is covered here rather than in the CsvSource matrix
+     * because @CsvSource cannot express a null enum argument.
+     */
+    @ParameterizedTest(name = "{0} -> null should be false, never an NPE")
+    @EnumSource(OrderStatus.class)
+    void nullTargetIsNeverAllowed(OrderStatus from) {
+        assertThatCode(() -> from.canTransitionTo(null)).doesNotThrowAnyException();
+        assertThat(from.canTransitionTo(null)).isFalse();
     }
 }

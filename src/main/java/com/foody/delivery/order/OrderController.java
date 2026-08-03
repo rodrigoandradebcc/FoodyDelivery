@@ -5,6 +5,7 @@ import com.foody.delivery.order.dto.OrderResponse;
 import com.foody.delivery.order.dto.PageResponse;
 import com.foody.delivery.order.dto.UpdateStatusRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
@@ -81,7 +82,7 @@ public class OrderController {
      * annotation.</b> Spring's last-resort {@code ServletModelAttributeMethodProcessor} is
      * registered with {@code annotationNotRequired = true}, so it claims this non-simple
      * parameter and honours {@code @Valid} whether or not the annotation is present. Verified
-     * by experiment: with {@code @ModelAttribute} deleted the full suite still passes 102/102,
+     * by experiment: with {@code @ModelAttribute} deleted the full suite still passes,
      * including {@code negativePageReturns400NotAn500}, {@code zeroSizeReturns400NotAn500} and
      * {@code unknownStatusFilterReturns400WithFieldNamedProblemDetail}. It is kept only because
      * it states the intent explicitly. Do not infer from its presence that removing it would
@@ -99,8 +100,14 @@ public class OrderController {
      * you. Also verified by experiment: removing it fails
      * {@code SwaggerIntegrationTest.listDocumentsStatusPageAndSizeAsThreeSeparateQueryParameters}
      * with {@code parameters.length() expected:<3> but was:<1>}.
+     *
+     * <p>{@code @Max(100)} is a real limit, not decoration: {@code GET /orders} costs
+     * {@code 1 + N + 1} queries per page because the {@code items} collection is EAGER, so an
+     * unbounded {@code size} let an authenticated caller turn {@code ?size=1000000} into a
+     * resource-exhaustion vector. The ceiling makes the worst case ~102 statements.
      */
-    public record ListQuery(OrderStatus status, @Min(0) Integer page, @Min(1) Integer size) {
+    public record ListQuery(OrderStatus status, @Min(0) Integer page,
+                            @Min(1) @Max(100) Integer size) {
 
         public ListQuery {
             page = (page == null) ? 0 : page;

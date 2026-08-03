@@ -23,7 +23,16 @@ public enum OrderStatus {
         // ENTREGUE and CANCELADO are terminal: empty set.
     }
 
+    /**
+     * The null guard is load-bearing, not defensive noise: {@code allowedNext} is built with
+     * {@code Set.of(...)}, and JDK immutable sets throw {@code NullPointerException} on
+     * {@code contains(null)} — including the empty {@code Set.of()} of the terminal states.
+     * Without the guard a null argument is an unhandled NPE and an HTTP 500 with no
+     * ProblemDetail, not a {@code false}. {@code @NotNull} on {@code UpdateStatusRequest.status}
+     * keeps that argument from ever arriving through the API, but this method is public, so the
+     * guard is what protects any future caller (bulk transition, admin tool) as well.
+     */
     public boolean canTransitionTo(OrderStatus next) {
-        return allowedNext.contains(next);
+        return next != null && allowedNext.contains(next);
     }
 }

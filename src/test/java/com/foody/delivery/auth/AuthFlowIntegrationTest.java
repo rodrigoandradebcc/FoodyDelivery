@@ -15,6 +15,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -78,6 +79,17 @@ class AuthFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.instance").value("/api/v1/auth/register"));
     }
 
+    /**
+     * The payload violates three constraints, so the assertion names all three fields. Asserting
+     * only that {@code errors} is a non-empty array would be satisfied by a broken implementation:
+     * with {@code @Email} deleted from {@code RegisterRequest.email} and {@code @Size(min = 8)}
+     * from {@code password}, the {@code @NotBlank} on {@code name} alone still produces a
+     * one-element array and the weaker test still passed. Both halves were verified by
+     * experiment: with {@code @Email} deleted the OLD assertion still reported BUILD SUCCESS,
+     * while this one fails with {@code Expected: (a collection containing "name" and a collection
+     * containing "email" and a collection containing "password") but: a collection containing
+     * "email" mismatches were: [was "password", was "name"]}.
+     */
     @Test
     void invalidRegisterPayloadReturns400WithFieldErrors() throws Exception {
         mockMvc.perform(post("/api/v1/auth/register")
@@ -88,7 +100,7 @@ class AuthFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title").value("Validation failed"))
                 .andExpect(jsonPath("$.errors").isArray())
-                .andExpect(jsonPath("$.errors").isNotEmpty());
+                .andExpect(jsonPath("$.errors[*].field", hasItems("name", "email", "password")));
     }
 
     /**

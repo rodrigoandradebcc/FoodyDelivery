@@ -53,8 +53,10 @@ Ambos são públicos. Use o botão **Authorize** com o `accessToken` devolvido p
 | `PATCH` | `/api/v1/orders/{id}/status` | Bearer JWT | `200` |
 
 Parâmetros da listagem, todos opcionais: `status` (um valor do enum; ausente = sem filtro),
-`page` (padrão `0`, mínimo `0`) e `size` (**padrão `20`**, mínimo `1`, sem máximo — ver
-limitação 2). Fora desses limites a resposta é `400`.
+`page` (padrão `0`, mínimo `0`) e `size` (**padrão `20`**, mínimo `1`, **máximo `100`**).
+Fora desses limites a resposta é `400` com o parâmetro apontado na extensão `errors`. O teto
+de `100` existe porque `GET /orders` custa `1 + N + 1` queries por página (ver limitação 1):
+sem ele, `?size=1000000` seria um vetor de exaustão de recursos.
 
 Regras de cadastro que valem conhecer antes do primeiro `POST /auth/register`: `name` até
 120 caracteres, `email` válido e único, e **`password` entre 8 e 72 caracteres** (o teto de
@@ -196,11 +198,7 @@ escopo de um exercício.
    (`... order by created_at desc limit ? offset ?`), não em memória — é um N+1 de
    carregamento de coleção, não paginação quebrada. A correção seria `@BatchSize` ou um
    `@EntityGraph`/`join fetch` com `countQuery` separado.
-2. **`size` não tem limite superior.** `?size=1000000` é aceito e responde `200`
-   (`?size=0` e `?page=-1` são rejeitados com `400`). Combinado com o N+1 acima, isso é um
-   vetor de exaustão de recursos para um usuário **autenticado**. Faltou um teto do tipo
-   `@Max(100)`.
-3. **Enumeração de e-mails: mitigada no login, aberta no cadastro.** `POST /login`
+2. **Enumeração de e-mails: mitigada no login, aberta no cadastro.** `POST /login`
    devolve o mesmo corpo `401` byte a byte para e-mail inexistente e para senha errada, e
    os dois caminhos executam um BCrypt de verdade (há um hash dummy justamente para o
    caso "usuário não encontrado"), então nem o tempo de resposta distingue os casos. Isso
@@ -208,24 +206,19 @@ escopo de um exercício.
    `409` com o e-mail ecoado no `detail` (`"An account with e-mail X already exists"`), o
    que é um oráculo de enumeração completo. Fechar isso exigiria um fluxo de cadastro por
    confirmação de e-mail, fora do escopo.
-4. **Cadastro duplicado sob concorrência pode virar `500` em vez de `409`.** O
-   `register` faz *check-then-insert* (`existsByEmail` e depois `save`), que tem janela de
-   corrida. A constraint `UNIQUE(email)` garante que **nenhuma conta duplicada é criada**;
-   o que degrada é só o status code. O correto seria capturar
-   `DataIntegrityViolationException` e traduzir para `409`.
-5. **Os `401` do filtro de segurança têm corpo vazio, não `ProblemDetail`.** Token
+3. **Os `401` do filtro de segurança têm corpo vazio, não `ProblemDetail`.** Token
    ausente ou malformado é rejeitado pelo resource server *antes* do Spring MVC, então a
    resposta é `401` com header `WWW-Authenticate: Bearer` e `Content-Length: 0`. Só os
    `401` levantados dentro da aplicação (login com credenciais inválidas) passam pelo
    `@RestControllerAdvice` e carregam corpo RFC 7807. É uma inconsistência real do
    contrato de erro; uniformizá-la exigiria um `AuthenticationEntryPoint` customizado.
-6. **O Swagger UI mostra cadeado em `/auth/register` e `/auth/login`** mesmo sendo rotas
+4. **O Swagger UI mostra cadeado em `/auth/register` e `/auth/login`** mesmo sendo rotas
    públicas, porque o esquema bearer é declarado como requisito **global** no
    `OpenApiConfig`. Cosmético: as rotas continuam abertas.
-7. **`/v3/api-docs` e o Swagger UI ficam habilitados incondicionalmente.** Ótimo para
+5. **`/v3/api-docs` e o Swagger UI ficam habilitados incondicionalmente.** Ótimo para
    avaliação, errado para produção — lá seriam desligados por profile
    (`springdoc.api-docs.enabled=false`).
-8. **As mensagens de validação (`400`) saem no idioma do locale padrão da JVM.** Numa
+6. **As mensagens de validação (`400`) saem no idioma do locale padrão da JVM.** Numa
    máquina em pt-BR aparecem como `"deve ser maior que ou igual à 0"`; noutra, em inglês.
    Vem do bundle padrão do Hibernate Validator; mensagens fixas exigiriam
    `message = "..."` em cada constraint.
@@ -248,7 +241,7 @@ como objeto, não a anotação `@ModelAttribute`:
 - **`@ModelAttribute` não é load-bearing.** O `ServletModelAttributeMethodProcessor` de
   último recurso do Spring é registrado com `annotationNotRequired = true`, então ele pega
   esse parâmetro (não-simples) e respeita o `@Valid` com ou sem a anotação. Comprovado por
-  experimento: removendo `@ModelAttribute`, a suíte inteira continua passando 102/102,
+  experimento: removendo `@ModelAttribute`, a suíte inteira continua passando,
   incluindo os três testes de validação da listagem. Ela fica no código só por deixar a
   intenção explícita.
 - **`@ParameterObject` é a que quebra em silêncio se sumir.** Ela não afeta o binding, só o
