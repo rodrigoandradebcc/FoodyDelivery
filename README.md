@@ -1,17 +1,45 @@
-# FoodyDelivery API
+# FoodyDelivery
 
-REST API de delivery: cadastro/login com JWT e gestão de pedidos com máquina de estados.
+Delivery em duas metades no mesmo repositório:
 
-**Java 21 · Spring Boot 4.1 · SQLite · Flyway · Spring Security (resource server) · springdoc/OpenAPI**
+| | O quê | Onde | Porta |
+|---|---|---|---|
+| **API** | REST com cadastro/login JWT e pedidos com máquina de estados | raiz (`src/`) | `8080` |
+| **Web** | Quadro Kanban de pedidos, criação de pedido, login/registro | [`web/`](web/README.md) | `5173` |
+
+**API:** Java 21 · Spring Boot 4.1 · SQLite · Flyway · Spring Security (resource server) · springdoc/OpenAPI
+**Web:** Vite · React 19 · TypeScript · react-router · TanStack Query · react-hook-form
+
+Este README documenta a API; o front tem o seu em [`web/README.md`](web/README.md).
 
 ---
 
 ## Como rodar
 
-Para subir a aplicação o pré-requisito é um só: **JDK 21**. Sem Docker, sem banco instalado,
-sem serviço externo — o SQLite é embutido e o Maven Wrapper baixa o próprio Maven. (O bloco
-de exemplos em "Fluxo completo" usa também `curl` e `python3`, mas isso é do exemplo, não da
-aplicação.)
+Pré-requisitos: **JDK 21** para a API e **Node.js ≥ 20.19** para o front. Sem Docker, sem
+banco instalado, sem serviço externo — o SQLite é embutido e o Maven Wrapper baixa o próprio
+Maven. (O bloco de exemplos em "Fluxo completo" usa também `curl` e `python3`, mas isso é do
+exemplo, não da aplicação.)
+
+Dá para usar só a API (via Swagger ou curl). Para usar pelo navegador, suba as duas metades
+em **dois terminais**, nesta ordem:
+
+```bash
+# terminal 1 — API
+./mvnw spring-boot:run
+
+# terminal 2 — front
+cd web && npm install && npm run dev
+```
+
+Depois abra <http://localhost:5173> e entre com a conta de demonstração
+(**demo@foody.dev** / **senha1234**).
+
+As portas são fixas: o CORS da API libera exatamente `http://localhost:5173` (dev) e
+`http://localhost:4173` (preview), e o Vite roda com `strictPort`. Trocar a porta do front
+quebra o login, não o carregamento da página.
+
+### Só a API
 
 ```bash
 ./mvnw spring-boot:run
@@ -25,19 +53,7 @@ A migration `V3__seed_demo_data.sql` semeia uma conta de demonstração
 para que o quadro apareça populado num checkout novo. Para subir sem os dados
 de demonstração, apague esse arquivo antes da primeira execução.
 
-### Frontend (web/)
-
-O frontend (Vite + React) vive em [`web/`](web/README.md). Com a API no ar:
-
-```bash
-cd web
-npm install
-npm run dev   # http://localhost:5173
-```
-
-Detalhes, decisões e testes: [`web/README.md`](web/README.md).
-
-Testes:
+Testes da API:
 
 ```bash
 ./mvnw test
@@ -45,6 +61,19 @@ Testes:
 
 Os testes de integração rodam contra um arquivo SQLite temporário **por classe de teste**
 (nunca `:memory:`, nunca `./data/foody.db`), com as mesmas migrations Flyway de produção.
+
+### Só o front
+
+O front precisa da API no ar para qualquer tela além do login. Comandos, variáveis de
+ambiente e decisões de UI: [`web/README.md`](web/README.md).
+
+```bash
+cd web
+npm install
+npm run dev       # http://localhost:5173
+npm test          # unitários (vitest)
+npm run build     # typecheck + build de produção
+```
 
 ---
 
@@ -288,8 +317,27 @@ com.foody.delivery
 
 Migrations em `src/main/resources/db/migration/`.
 
+O front espelha essa organização por feature:
+
+```
+web/src
+├── api/                cliente HTTP tipado (request, ApiError/ProblemDetail) e endpoints
+├── auth/               AuthProvider, useAuth, RequireAuth
+├── components/         AppShell (header + Outlet)
+├── features/orders/    BoardPage, Column, OrderCard, CanceledTray, MobileBoard,
+│                       NewOrderPage, statusMeta, useOrders
+├── lib/                money (centavos inteiros), cep, time, useMediaQuery
+├── pages/              LoginPage, RegisterPage
+└── index.css           design tokens e classes compartilhadas
+```
+
 ## Testes
 
-111 testes, todos verdes (`./mvnw test`): a matriz 5×5 completa da máquina de estados,
+**API — 111 testes**, todos verdes (`./mvnw test`): a matriz 5×5 completa da máquina de estados,
 validação de DTOs, `OrderService` e `AuthService` com Mockito, e integração ponta a ponta
 de auth, pedidos, persistência, segurança e OpenAPI sobre SQLite em arquivo temporário.
+
+**Web — 17 testes** (`cd web && npm test`): dinheiro em centavos (incluindo os casos em que
+um round-trip por float perderia um centavo), máscara/strip de CEP, e o cliente HTTP contra
+as duas formas de 401 da API (filtro do Spring Security com corpo vazio × ProblemDetail de
+login inválido). `npm run build` roda o typecheck junto.
