@@ -1,0 +1,419 @@
+/* ==========================================================================
+   Foody — "kitchen pass" design system
+   --------------------------------------------------------------------------
+   The metaphor is the pass: the counter where tickets land, get worked, and
+   get torn off. Warm paper ground, ink text, one hot tomato accent, and a
+   perforated tear-line on ticket footers.
+
+   Every foreground/background pair shipped here was measured with the WCAG
+   2.1 relative-luminance formula. All 29 text pairs clear 4.5:1 (AA normal
+   text); the measurements are recorded in the task-2 report.
+
+   Layer order is declared once, up front, so later tasks can add rules in
+   any source order without fighting specificity.
+   ========================================================================== */
+
+@layer reset, base, components, utilities;
+
+@layer reset {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+  * {
+    margin: 0;
+  }
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+  }
+  img,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+  p,
+  h1,
+  h2,
+  h3 {
+    overflow-wrap: break-word;
+  }
+}
+
+@layer base {
+  :root {
+    /* — kitchen pass palette — */
+    --bg: #f7f2e9;
+    --surface: #ffffff;
+    --surface-dim: #efe8da;
+    --ink: #221e19;
+    --ink-soft: #5c564c;
+    --line: #e2d9c8; /* decorative hairline: card edges, dividers */
+    --line-strong: #8f8168; /* control boundaries: inputs, selects (>=3:1) */
+    --accent: #bc3908;
+    --accent-hover: #a33107;
+    --accent-ink: #fff8f0;
+    --focus: #1d5fbf;
+    --focus-halo: #fff8f0; /* separator so the ring reads on ANY ground */
+    --danger: #a4200f;
+
+    /* Status hues. `-ink` is legible on paper, on white, and on its own
+       `-bg` chip; `-bg` is the chip fill and the column wash. */
+    --st-recebido-ink: #1d5fbf;
+    --st-recebido-bg: #eaf1fc;
+    --st-em-preparo-ink: #7a4e00;
+    --st-em-preparo-bg: #fbf0dc;
+    --st-saiu-ink: #0e6b63;
+    --st-saiu-bg: #e0f2ef;
+    --st-entregue-ink: #196b34;
+    --st-entregue-bg: #e4f3e7;
+    --st-cancelado-ink: #5f594f;
+    --st-cancelado-bg: #ece7de;
+
+    /* type */
+    --font-display: "Fraunces Variable", Georgia, "Times New Roman", serif;
+    --font-body: "Public Sans Variable", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --text-sm: 0.8125rem;
+    --text-base: 0.9375rem;
+    --text-lg: clamp(1.0625rem, 1rem + 0.3vw, 1.1875rem);
+    --text-xl: clamp(1.375rem, 1.2rem + 0.8vw, 1.75rem);
+    --text-2xl: clamp(1.75rem, 1.4rem + 1.6vw, 2.5rem);
+
+    /* 4/8px rhythm */
+    --sp-1: 0.25rem;
+    --sp-2: 0.5rem;
+    --sp-3: 0.75rem;
+    --sp-4: 1rem;
+    --sp-5: 1.5rem;
+    --sp-6: 2rem;
+    --sp-7: 3rem;
+
+    --r-sm: 6px;
+    --r-md: 10px;
+    --r-lg: 16px;
+
+    --shadow-sm: 0 1px 2px rgb(34 30 25 / 0.08), 0 1px 6px rgb(34 30 25 / 0.05);
+    --shadow-md: 0 4px 16px rgb(34 30 25 / 0.12);
+
+    /* icon sizing — one scale keeps stroke weight consistent */
+    --icon-sm: 16px;
+    --icon-md: 20px;
+    --icon-lg: 24px;
+
+    /* motion — one rhythm for the whole app */
+    --dur-fast: 120ms;
+    --dur-base: 180ms;
+    --dur-slow: 260ms;
+    --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --stagger-step: 40ms;
+
+    /* z-index scale */
+    --z-base: 0;
+    --z-sticky: 10;
+    --z-overlay: 40;
+    --z-modal: 100;
+    --z-toast: 1000;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: 1.55;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+  h1 {
+    font-size: var(--text-2xl);
+  }
+  h2 {
+    font-size: var(--text-xl);
+  }
+  h3 {
+    font-size: var(--text-lg);
+  }
+
+  a {
+    color: var(--accent);
+    text-underline-offset: 2px;
+  }
+
+  /* The halo fills the outline-offset gap, so the ring keeps >=3:1 even over
+     the tomato button fill or a dimmed cancelled ticket. */
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px var(--focus-halo);
+    border-radius: var(--r-sm);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* — buttons ————————————————————————————————————————————— */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--sp-2);
+    min-height: 44px; /* touch target */
+    padding: 0 var(--sp-4);
+    border: 1px solid transparent;
+    border-radius: var(--r-md);
+    font-weight: 600;
+    font-size: var(--text-base);
+    cursor: pointer;
+    touch-action: manipulation;
+    transition:
+      background-color var(--dur-base) var(--ease-out),
+      transform var(--dur-fast) var(--ease-out);
+    background: none;
+  }
+  .btn:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: var(--accent-ink);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
+
+  .btn-ghost {
+    border-color: var(--line-strong);
+    color: var(--ink);
+    background: var(--surface);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--surface-dim);
+  }
+
+  .btn-danger-ghost {
+    color: var(--danger);
+    border-color: transparent;
+  }
+  .btn-danger-ghost:hover:not(:disabled) {
+    background: var(--st-cancelado-bg);
+  }
+
+  .btn-sm {
+    min-height: 36px;
+    padding: 0 var(--sp-3);
+    font-size: var(--text-sm);
+  }
+
+  /* — forms ——————————————————————————————————————————————— */
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-1);
+  }
+  .field > label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--ink-soft);
+  }
+  .field > input,
+  .field > select,
+  .field > textarea {
+    min-height: 44px;
+    padding: 0 var(--sp-3);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-md);
+    background: var(--surface);
+    font-size: 16px; /* prevents iOS zoom-on-focus */
+    transition: border-color var(--dur-base) var(--ease-out);
+  }
+  .field > textarea {
+    padding: var(--sp-2) var(--sp-3);
+    line-height: 1.5;
+    resize: vertical;
+  }
+  .field > input:hover:not(:disabled),
+  .field > select:hover:not(:disabled) {
+    border-color: var(--ink-soft);
+  }
+  .field > input[aria-invalid="true"],
+  .field > select[aria-invalid="true"],
+  .field > textarea[aria-invalid="true"] {
+    border-color: var(--danger);
+  }
+  .field-error {
+    font-size: var(--text-sm);
+    color: var(--danger);
+  }
+  .field-hint {
+    font-size: var(--text-sm);
+    color: var(--ink-soft);
+  }
+
+  /* — surfaces ———————————————————————————————————————————— */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* The signature: a perforated tear-off on ticket footers. The dashed rule
+     is the perforation; the notches are punched holes where the paper ground
+     shows through the card edge. Assumes the card pads by --sp-4. */
+  .tear {
+    position: relative;
+    margin-top: var(--sp-3);
+    padding-top: var(--sp-3);
+    border-top: 1px dashed var(--line-strong);
+  }
+  .tear::before,
+  .tear::after {
+    content: "";
+    position: absolute;
+    top: -6px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--bg);
+  }
+  .tear::before {
+    left: calc(var(--sp-4) * -1 - 6px);
+  }
+  .tear::after {
+    right: calc(var(--sp-4) * -1 - 6px);
+  }
+
+  /* — status chips ————————————————————————————————————————— */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+    padding: 2px var(--sp-2);
+    border-radius: 999px;
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+  /* Status is never carried by colour alone — pair each chip with an SVG
+     glyph and a text label (WCAG 1.4.1). */
+  .badge-recebido {
+    color: var(--st-recebido-ink);
+    background: var(--st-recebido-bg);
+  }
+  .badge-em-preparo {
+    color: var(--st-em-preparo-ink);
+    background: var(--st-em-preparo-bg);
+  }
+  .badge-saiu {
+    color: var(--st-saiu-ink);
+    background: var(--st-saiu-bg);
+  }
+  .badge-entregue {
+    color: var(--st-entregue-ink);
+    background: var(--st-entregue-bg);
+  }
+  .badge-cancelado {
+    color: var(--st-cancelado-ink);
+    background: var(--st-cancelado-bg);
+  }
+
+  /* Terminal / dimmed treatment for CANCELADO tickets. The ticket recedes by
+     taking the cancelado wash and losing its lift — not by an opacity fade,
+     so text contrast stays measurable (ink 13.45:1, ink-soft 5.90:1). */
+  .is-cancelled {
+    background: var(--st-cancelado-bg);
+    border-color: var(--line);
+    box-shadow: none;
+    color: var(--ink-soft);
+  }
+  .is-cancelled .tear {
+    border-top-color: var(--ink-soft);
+  }
+
+  /* — icons ——————————————————————————————————————————————— */
+  .icon {
+    width: var(--icon-md);
+    height: var(--icon-md);
+    flex: none;
+    stroke-width: 1.5;
+  }
+  .icon-sm {
+    width: var(--icon-sm);
+    height: var(--icon-sm);
+  }
+  .icon-lg {
+    width: var(--icon-lg);
+    height: var(--icon-lg);
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    clip-path: inset(50%);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .muted {
+    color: var(--ink-soft);
+  }
+
+  /* Staggered entrance. Set `style={{ "--i": index }}` per item; the
+     reduced-motion block above collapses this to an instant reveal. */
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  .rise {
+    animation: rise var(--dur-slow) var(--ease-out) both;
+    animation-delay: calc(var(--i, 0) * var(--stagger-step));
+  }
+}

@@ -7,3 +7,10 @@ data/*.db-wal
 .vscode/
 .DS_Store
 .superpowers/
+
+# frontend (web/)
+web/node_modules/
+web/dist/
+web/.vite/
+web/*.local
+npm-debug.log*
