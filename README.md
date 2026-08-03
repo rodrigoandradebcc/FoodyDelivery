@@ -341,3 +341,5 @@ de auth, pedidos, persistência, segurança e OpenAPI sobre SQLite em arquivo te
 um round-trip por float perderia um centavo), máscara/strip de CEP, e o cliente HTTP contra
 as duas formas de 401 da API (filtro do Spring Security com corpo vazio × ProblemDetail de
 login inválido). `npm run build` roda o typecheck junto.
+# FoodyDelivery
+# FoodyDelivery
