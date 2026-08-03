@@ -20,6 +20,18 @@ aplicação.)
 A API sobe em `http://localhost:8080`. Na primeira subida o Flyway cria o banco em
 `./data/foody.db` e aplica as duas migrations. Não há passo de setup manual.
 
+### Frontend (web/)
+
+O frontend (Vite + React) vive em [`web/`](web/README.md). Com a API no ar:
+
+```bash
+cd web
+npm install
+npm run dev   # http://localhost:5173
+```
+
+Detalhes, decisões e testes: [`web/README.md`](web/README.md).
+
 Testes:
 
 ```bash
