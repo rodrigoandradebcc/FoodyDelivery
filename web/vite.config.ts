@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -17,5 +18,11 @@ export default defineConfig({
   preview: {
     port: 4173,
     strictPort: true,
+  },
+  // The api/ and lib/ modules under test are pure TypeScript: no DOM, no React.
+  // `node` keeps the suite fast and forces the fetch layer to stay free of
+  // browser-only assumptions.
+  test: {
+    environment: "node",
   },
 });
