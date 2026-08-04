@@ -18,9 +18,7 @@ Este README documenta a API e o projeto como um todo; o front tem o seu em
 **Índice:** [Requisitos do desafio](#requisitos-do-desafio-e-onde-cada-um-está) ·
 [Como rodar](#como-rodar) · [Swagger](#swagger) · [Endpoints](#endpoints) ·
 [Máquina de estados](#máquina-de-estados) · [Fluxo completo (curl)](#fluxo-completo-curl) ·
-[Decisões e porquês](#decisões-e-porquês) ·
-[Nota para quem for mexer no código](#nota-para-quem-for-mexer-no-código) ·
-[Estrutura](#estrutura) · [Testes](#testes)
+[Decisões e porquês](#decisões-e-porquês) · [Estrutura](#estrutura) · [Testes](#testes)
 
 ---
 
@@ -279,38 +277,6 @@ os seus. Autorização por dono/perfil não faz parte do escopo deste exercício
 
 **Senhas com BCrypt(10)**, e a validação limita a senha a 72 *bytes* (não caracteres),
 que é o teto real do BCrypt — acima disso o encoder lançaria exceção e viraria um 500.
-
----
-
-## Nota para quem for mexer no código
-
-`OrderController.list` recebe os filtros como um **objeto** (`ListQuery`) em vez de três
-`@RequestParam` soltos. Isso é intencional: `OrderService.list` passa `page`/`size` direto
-para `PageRequest.of`, que lança `IllegalArgumentException` para `page < 0` ou `size < 1`, e
-o `ApiExceptionHandler` **não** trata essa exceção (de propósito, para que bugs internos
-continuem `500`). Com `@RequestParam`s, `?page=-1` seria um `500`. Ligar `@Validated` +
-`@Min` nos params só trocaria a falha por `ConstraintViolationException`, que também não é
-tratada — `500` de novo. Bindando num objeto, a falha vira
-`MethodArgumentNotValidException`, que o handler já converte no `400` padrão com a extensão
-`errors`.
-
-O parâmetro carrega duas anotações, e **elas não têm o mesmo peso** — o que vale é o binding
-como objeto, não a anotação `@ModelAttribute`:
-
-- **`@ModelAttribute` não é load-bearing.** O `ServletModelAttributeMethodProcessor` de
-  último recurso do Spring é registrado com `annotationNotRequired = true`, então ele pega
-  esse parâmetro (não-simples) e respeita o `@Valid` com ou sem a anotação. Comprovado por
-  experimento: removendo `@ModelAttribute`, a suíte inteira continua passando,
-  incluindo os três testes de validação da listagem. Ela fica no código só por deixar a
-  intenção explícita.
-- **`@ParameterObject` é a que quebra em silêncio se sumir.** Ela não afeta o binding, só o
-  documento OpenAPI: sem ela o springdoc documenta o record como um único parâmetro opaco
-  `query` e o Swagger UI renderiza uma caixa inutilizável no lugar dos três campos. O
-  runtime continua funcionando igual — nada além do spec gerado denuncia. Removendo,
-  `SwaggerIntegrationTest` falha com `parameters.length() expected:<3> but was:<1>`.
-
-Ou seja: pode-se remover `@ModelAttribute` sem quebrar nada; trocar o objeto por
-`@RequestParam`s, ou remover `@ParameterObject`, quebra.
 
 ---
 
