@@ -18,7 +18,8 @@ Este README documenta a API e o projeto como um todo; o front tem o seu em
 **Índice:** [Requisitos do desafio](#requisitos-do-desafio-e-onde-cada-um-está) ·
 [Como rodar](#como-rodar) · [Swagger](#swagger) · [Endpoints](#endpoints) ·
 [Máquina de estados](#máquina-de-estados) · [Fluxo completo (curl)](#fluxo-completo-curl) ·
-[Decisões e porquês](#decisões-e-porquês) · [Limitações conhecidas](#limitações-conhecidas) ·
+[Decisões e porquês](#decisões-e-porquês) ·
+[Nota para quem for mexer no código](#nota-para-quem-for-mexer-no-código) ·
 [Estrutura](#estrutura) · [Testes](#testes)
 
 ---
@@ -149,8 +150,8 @@ Ambos são públicos. Use o botão **Authorize** com o `accessToken` devolvido p
 Parâmetros da listagem, todos opcionais: `status` (um valor do enum; ausente = sem filtro),
 `page` (padrão `0`, mínimo `0`) e `size` (**padrão `20`**, mínimo `1`, **máximo `100`**).
 Fora desses limites a resposta é `400` com o parâmetro apontado na extensão `errors`. O teto
-de `100` existe porque `GET /orders` custa `1 + N + 1` queries por página (ver limitação 1):
-sem ele, `?size=1000000` seria um vetor de exaustão de recursos.
+de `100` existe porque `GET /orders` custa `1 + N + 1` queries por página — a coleção
+`items` é `EAGER` — e sem ele `?size=1000000` seria um vetor de exaustão de recursos.
 
 Regras de cadastro que valem conhecer antes do primeiro `POST /auth/register`: `name` até
 120 caracteres, `email` válido e único, e **`password` entre 8 e 72 caracteres** (o teto de
@@ -281,43 +282,7 @@ que é o teto real do BCrypt — acima disso o encoder lançaria exceção e vir
 
 ---
 
-## Limitações conhecidas
-
-Coisas que eu sei que estão aqui. Nenhuma é acidente; todas são dívida assumida no
-escopo de um exercício.
-
-1. **`GET /orders` faz `1 + N + 1` queries por página (N+1).** A coleção `items` é
-   `EAGER`, então uma listagem de 5 pedidos dispara 7 statements: 1 da página, 5 dos itens
-   (uma por pedido) e 1 do `count`. **A paginação em si está correta e acontece no SQL**
-   (`... order by created_at desc limit ? offset ?`), não em memória — é um N+1 de
-   carregamento de coleção, não paginação quebrada. A correção seria `@BatchSize` ou um
-   `@EntityGraph`/`join fetch` com `countQuery` separado.
-2. **Enumeração de e-mails: mitigada no login, aberta no cadastro.** `POST /login`
-   devolve o mesmo corpo `401` byte a byte para e-mail inexistente e para senha errada, e
-   os dois caminhos executam um BCrypt de verdade (há um hash dummy justamente para o
-   caso "usuário não encontrado"), então nem o tempo de resposta distingue os casos. Isso
-   é defesa em profundidade — **não** torna a API não-enumerável: `POST /register` devolve
-   `409` com o e-mail ecoado no `detail` (`"An account with e-mail X already exists"`), o
-   que é um oráculo de enumeração completo. Fechar isso exigiria um fluxo de cadastro por
-   confirmação de e-mail, fora do escopo.
-3. **Os `401` do filtro de segurança têm corpo vazio, não `ProblemDetail`.** Token
-   ausente ou malformado é rejeitado pelo resource server *antes* do Spring MVC, então a
-   resposta é `401` com header `WWW-Authenticate: Bearer` e `Content-Length: 0`. Só os
-   `401` levantados dentro da aplicação (login com credenciais inválidas) passam pelo
-   `@RestControllerAdvice` e carregam corpo RFC 7807. É uma inconsistência real do
-   contrato de erro; uniformizá-la exigiria um `AuthenticationEntryPoint` customizado.
-4. **O Swagger UI mostra cadeado em `/auth/register` e `/auth/login`** mesmo sendo rotas
-   públicas, porque o esquema bearer é declarado como requisito **global** no
-   `OpenApiConfig`. Cosmético: as rotas continuam abertas.
-5. **`/v3/api-docs` e o Swagger UI ficam habilitados incondicionalmente.** Ótimo para
-   avaliação, errado para produção — lá seriam desligados por profile
-   (`springdoc.api-docs.enabled=false`).
-6. **As mensagens de validação (`400`) saem no idioma do locale padrão da JVM.** Numa
-   máquina em pt-BR aparecem como `"deve ser maior que ou igual à 0"`; noutra, em inglês.
-   Vem do bundle padrão do Hibernate Validator; mensagens fixas exigiriam
-   `message = "..."` em cada constraint.
-
-### Nota para quem for mexer no código
+## Nota para quem for mexer no código
 
 `OrderController.list` recebe os filtros como um **objeto** (`ListQuery`) em vez de três
 `@RequestParam` soltos. Isso é intencional: `OrderService.list` passa `page`/`size` direto
