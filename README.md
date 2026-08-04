@@ -18,7 +18,8 @@ Este README documenta a API e o projeto como um todo; o front tem o seu em
 **Índice:** [Requisitos do desafio](#requisitos-do-desafio-e-onde-cada-um-está) ·
 [Como rodar](#como-rodar) · [Swagger](#swagger) · [Endpoints](#endpoints) ·
 [Máquina de estados](#máquina-de-estados) · [Fluxo completo (curl)](#fluxo-completo-curl) ·
-[Decisões e porquês](#decisões-e-porquês) · [Estrutura](#estrutura) · [Testes](#testes)
+[Decisões e porquês](#decisões-e-porquês) · [Estrutura](#estrutura) · [Testes](#testes) ·
+[Limitações assumidas](#limitações-assumidas)
 
 ---
 
@@ -322,3 +323,21 @@ um round-trip por float perderia um centavo), máscara/strip de CEP, a consulta 
 (inclusive CEP inexistente, falha de rede e requisição cancelada), e o cliente HTTP contra
 as duas formas de 401 da API (filtro do Spring Security com corpo vazio × ProblemDetail de
 login inválido). `npm run build` roda o typecheck junto.
+
+---
+
+## Limitações assumidas
+
+Dívida consciente no escopo de um exercício, não descuido:
+
+- **`GET /orders` tem N+1** na coleção de itens (`EAGER`) — a paginação em si acontece no
+  SQL, não em memória. Correção seria `@BatchSize` ou `@EntityGraph` com `countQuery`
+  separado.
+- **`POST /register` é enumerável:** devolve `409` com o e-mail no corpo. O login não é —
+  responde o mesmo `401` para e-mail inexistente e senha errada, e roda BCrypt nos dois
+  caminhos para não vazar pelo tempo de resposta.
+- **Swagger e `/v3/api-docs` ficam abertos** incondicionalmente; em produção sairiam por
+  profile (`springdoc.api-docs.enabled=false`).
+- **Os `401` do filtro de segurança têm corpo vazio,** não `ProblemDetail` — o resource
+  server rejeita token ausente ou malformado antes do Spring MVC. Só os `401` levantados
+  na aplicação carregam corpo RFC 7807.
