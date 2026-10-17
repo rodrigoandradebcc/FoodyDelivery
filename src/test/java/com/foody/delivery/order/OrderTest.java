@@ -15,12 +15,12 @@ class OrderTest {
             new Address("Rua das Flores", "100", null, "Centro", "São Paulo", "SP", "01001000");
 
     private static Order placed() {
-        return Order.place("user-1", List.of(new OrderItem("Pizza", 4990L, 2)), ADDRESS);
+        return Order.place("user-1", "Ana Souza", List.of(new OrderItem("Pizza", 4990L, 2)), ADDRESS);
     }
 
     @Test
     void placeStartsAsRecebidoWithServerComputedTotalAndTimestamps() {
-        Order order = Order.place("user-1",
+        Order order = Order.place("user-1", "Ana Souza",
                 List.of(new OrderItem("Pizza", 4990L, 2), new OrderItem("Guaraná", 1500L, 1)), ADDRESS);
 
         assertThat(order.getId()).hasSize(36);
@@ -35,7 +35,7 @@ class OrderTest {
     @Test
     void placeCopiesTheItemListSoLaterMutationOfTheArgumentIsIgnored() {
         List<OrderItem> items = new ArrayList<>(List.of(new OrderItem("Pizza", 4990L, 1)));
-        Order order = Order.place("user-1", items, ADDRESS);
+        Order order = Order.place("user-1", "Ana Souza", items, ADDRESS);
 
         items.add(new OrderItem("Extra", 100L, 1));
 
@@ -44,10 +44,10 @@ class OrderTest {
 
     @Test
     void placeRejectsNullOrEmptyItems() {
-        assertThatThrownBy(() -> Order.place("user-1", null, ADDRESS))
+        assertThatThrownBy(() -> Order.place("user-1", "Ana Souza", null, ADDRESS))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Order requires at least one item");
-        assertThatThrownBy(() -> Order.place("user-1", List.of(), ADDRESS))
+        assertThatThrownBy(() -> Order.place("user-1", "Ana Souza", List.of(), ADDRESS))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -56,7 +56,7 @@ class OrderTest {
         List<OrderItem> items = List.of(
                 new OrderItem("A", Long.MAX_VALUE, 1), new OrderItem("B", 1L, 1));
 
-        assertThatThrownBy(() -> Order.place("user-1", items, ADDRESS))
+        assertThatThrownBy(() -> Order.place("user-1", "Ana Souza", items, ADDRESS))
                 .isInstanceOf(ArithmeticException.class);
     }
 

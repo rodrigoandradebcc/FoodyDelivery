@@ -1,4 +1,13 @@
 const rtf = new Intl.RelativeTimeFormat("pt-BR", { numeric: "auto" });
+const localDateTime = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "short",
+  timeStyle: "short",
+});
+
+export function formatLocalDateTime(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? "" : localDateTime.format(date);
+}
 
 export function formatRelative(iso: string): string {
   const then = new Date(iso).getTime();

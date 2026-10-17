@@ -53,6 +53,7 @@ class OrderControllerTest {
 
     private static final String CREATE_ORDER_JSON = """
             {
+              "customerName": "Ana Souza",
               "items": [{"productName": "Pizza Calabresa", "unitPriceCents": 4990, "quantity": 2}],
               "deliveryAddress": {
                 "street": "Rua das Flores", "number": "100", "complement": null,
@@ -63,7 +64,7 @@ class OrderControllerTest {
 
     private static OrderResponse response(String status) {
         Instant now = Instant.parse("2026-07-31T13:00:00Z");
-        return new OrderResponse("order-1", status, 9980L,
+        return new OrderResponse("order-1", "Ana Souza", status, 9980L,
                 List.of(new OrderItemResponse("Pizza Calabresa", 4990L, 2)),
                 new AddressDto("Rua das Flores", "100", null, "Centro", "São Paulo", "SP", "01001000"),
                 now, now);
@@ -81,7 +82,7 @@ class OrderControllerTest {
 
     @Test
     void createPassesTheJwtSubjectAndTheParsedBodyToTheServiceAndAnswers201WithLocation() throws Exception {
-        CreateOrderRequest expected = new CreateOrderRequest(
+        CreateOrderRequest expected = new CreateOrderRequest("Ana Souza",
                 List.of(new OrderItemRequest("Pizza Calabresa", 4990L, 2)),
                 new AddressDto("Rua das Flores", "100", null, "Centro", "São Paulo", "SP", "01001000"));
         when(orderService.create("user-1", expected)).thenReturn(response("RECEBIDO"));
@@ -227,7 +228,7 @@ class OrderControllerTest {
 
     @Test
     void numericStringsAreStillCoerced() throws Exception {
-        CreateOrderRequest expected = new CreateOrderRequest(
+        CreateOrderRequest expected = new CreateOrderRequest("Ana Souza",
                 List.of(new OrderItemRequest("Pizza Calabresa", 4990L, 2)),
                 new AddressDto("Rua das Flores", "100", null, "Centro", "São Paulo", "SP", "01001000"));
         when(orderService.create("user-1", expected)).thenReturn(response("RECEBIDO"));

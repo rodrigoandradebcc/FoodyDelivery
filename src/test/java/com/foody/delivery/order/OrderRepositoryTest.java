@@ -46,7 +46,7 @@ class OrderRepositoryTest {
     }
 
     private Order saved(String userId, OrderStatus status) {
-        Order order = Order.place(userId, List.of(new OrderItem("Pizza", 4990L, 1)), address());
+        Order order = Order.place(userId, "Ana Souza", List.of(new OrderItem("Pizza", 4990L, 1)), address());
         if (status != OrderStatus.RECEBIDO) {
             order.changeStatus(status);
         }
@@ -101,7 +101,7 @@ class OrderRepositoryTest {
 
     @Test
     void anOrderWhoseUserDoesNotExistIsRejectedByTheForeignKey() {
-        Order ghost = Order.place("ghost-user-id", List.of(new OrderItem("Pizza", 4990L, 1)), address());
+        Order ghost = Order.place("ghost-user-id", "Ana Souza", List.of(new OrderItem("Pizza", 4990L, 1)), address());
 
         assertThatThrownBy(() -> orderRepository.saveAndFlush(ghost))
                 .isInstanceOf(DataAccessException.class)

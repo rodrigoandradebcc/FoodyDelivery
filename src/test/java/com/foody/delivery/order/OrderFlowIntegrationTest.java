@@ -37,6 +37,7 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
 
     private static final String CREATE_ORDER_JSON = """
             {
+              "customerName": "Ana Souza",
               "items": [
                 { "productName": "Pizza Calabresa", "unitPriceCents": 4990, "quantity": 2 },
                 { "productName": "Guaraná 2L", "unitPriceCents": 1500, "quantity": 1 }
@@ -113,10 +114,35 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", containsString("/api/v1/orders/")))
                 .andExpect(jsonPath("$.status").value("RECEBIDO"))
+                .andExpect(jsonPath("$.customerName").value("Ana Souza"))
                 .andExpect(jsonPath("$.totalCents").value(11480))
                 .andExpect(jsonPath("$.items.length()").value(2))
                 .andExpect(jsonPath("$.deliveryAddress.city").value("São Paulo"))
                 .andExpect(jsonPath("$.createdAt").isNotEmpty());
+    }
+
+    @Test
+    void missingCustomerNameReturns400() throws Exception {
+        String token = authToken();
+        mockMvc.perform(post("/api/v1/orders")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_ORDER_JSON.replace("\"customerName\": \"Ana Souza\",", "")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[*].field", hasItem("customerName")));
+    }
+
+    @Test
+    void blankAndOverlongCustomerNamesReturn400() throws Exception {
+        String token = authToken();
+        for (String name : List.of("   ", "x".repeat(121))) {
+            mockMvc.perform(post("/api/v1/orders")
+                            .header("Authorization", "Bearer " + token)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(CREATE_ORDER_JSON.replace("Ana Souza", name)))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors[*].field", hasItem("customerName")));
+        }
     }
 
     @Test
@@ -147,6 +173,7 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
                                 {
                                   "totalCents": 1,
                                   "total_cents": 1,
+                                  "customerName": "Ana Souza",
                                   "items": [
                                     { "productName": "Pizza Calabresa", "unitPriceCents": 4990, "quantity": 2 },
                                     { "productName": "Guaraná 2L", "unitPriceCents": 1500, "quantity": 1 }
@@ -175,7 +202,7 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
                         .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"items": [], "deliveryAddress": {
+                                {"customerName": "Ana Souza", "items": [], "deliveryAddress": {
                                   "street": "Rua das Flores", "number": "100", "complement": null,
                                   "district": "Centro", "city": "São Paulo", "state": "SP", "zipCode": "01001000"}}
                                 """))
@@ -192,6 +219,7 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                  "customerName": "Ana Souza",
                                   "items": [
                                     { "productName": "Pizza Calabresa", "unitPriceCents": 4990, "quantity": 0 }
                                   ],
@@ -215,6 +243,7 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                  "customerName": "Ana Souza",
                                   "items": [null],
                                   "deliveryAddress": {
                                     "street": "Rua das Flores", "number": "100", "complement": null,
@@ -394,12 +423,16 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void cancelAfterDispatchReturns409() throws Exception {
+    void cancelAfterDispatchReturns200() throws Exception {
         String token = authToken();
         String orderId = createOrder(token);
         patchStatus(token, orderId, "EM_PREPARO", status().isOk());
         patchStatus(token, orderId, "SAIU_PARA_ENTREGA", status().isOk());
-        patchStatus(token, orderId, "CANCELADO", status().isConflict());
+        patchStatus(token, orderId, "CANCELADO", status().isOk());
+        mockMvc.perform(get("/api/v1/orders/" + orderId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("CANCELADO"));
     }
 
     @Test
@@ -443,13 +476,17 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
-    void garbageTokenIsRejectedByTheFilterChainWithEmptyBody() throws Exception {
+    void garbageTokenReturnsUnauthorizedProblemDetail() throws Exception {
         mockMvc.perform(get("/api/v1/orders")
                         .header("Authorization", "Bearer not-a-jwt"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().exists("WWW-Authenticate"))
-                .andExpect(result -> org.assertj.core.api.Assertions
-                        .assertThat(result.getResponse().getContentAsString()).isEmpty());
+                .andExpect(header().string("Content-Type", "application/problem+json"))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Unauthorized"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").isNotEmpty())
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders"));
     }
 
     @Test

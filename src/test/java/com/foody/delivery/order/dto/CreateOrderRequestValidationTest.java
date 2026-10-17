@@ -41,7 +41,7 @@ class CreateOrderRequestValidationTest {
     }
 
     private static CreateOrderRequest requestWith(OrderItemRequest... items) {
-        return new CreateOrderRequest(Arrays.asList(items), validAddress());
+        return new CreateOrderRequest("Ana Souza", Arrays.asList(items), validAddress());
     }
 
     private static List<String> pathsOf(CreateOrderRequest request) {
@@ -60,29 +60,44 @@ class CreateOrderRequestValidationTest {
     }
 
     @Test
+    void customerNameIsRequiredTrimmedAndLimitedToOneHundredTwentyCharacters() {
+        assertThat(pathsOf(new CreateOrderRequest(null, List.of(validItem()), validAddress())))
+                .containsExactly("customerName");
+        assertThat(pathsOf(new CreateOrderRequest("   ", List.of(validItem()), validAddress())))
+                .containsExactly("customerName");
+        assertThat(pathsOf(new CreateOrderRequest("x".repeat(121), List.of(validItem()), validAddress())))
+                .containsExactly("customerName");
+        CreateOrderRequest request = new CreateOrderRequest(" Ana Souza ", List.of(validItem()), validAddress());
+        assertThat(pathsOf(request)).isEmpty();
+        assertThat(request.customerName()).isEqualTo("Ana Souza");
+        assertThat(pathsOf(new CreateOrderRequest("x".repeat(120), List.of(validItem()), validAddress())))
+                .isEmpty();
+    }
+
+    @Test
     void emptyItemsListIsRejected() {
-        CreateOrderRequest request = new CreateOrderRequest(List.of(), validAddress());
+        CreateOrderRequest request = new CreateOrderRequest("Ana Souza", List.of(), validAddress());
 
         assertThat(pathsOf(request)).containsExactly("items");
     }
 
     @Test
     void oneHundredItemsAreAccepted() {
-        CreateOrderRequest request = new CreateOrderRequest(Collections.nCopies(100, validItem()), validAddress());
+        CreateOrderRequest request = new CreateOrderRequest("Ana Souza", Collections.nCopies(100, validItem()), validAddress());
 
         assertThat(pathsOf(request)).isEmpty();
     }
 
     @Test
     void moreThanOneHundredItemsAreRejected() {
-        CreateOrderRequest request = new CreateOrderRequest(Collections.nCopies(101, validItem()), validAddress());
+        CreateOrderRequest request = new CreateOrderRequest("Ana Souza", Collections.nCopies(101, validItem()), validAddress());
 
         assertThat(pathsOf(request)).containsExactly("items");
     }
 
     @Test
     void nullItemsListIsRejected() {
-        CreateOrderRequest request = new CreateOrderRequest(null, validAddress());
+        CreateOrderRequest request = new CreateOrderRequest("Ana Souza", null, validAddress());
 
         assertThat(pathsOf(request)).containsExactly("items");
     }
@@ -90,7 +105,7 @@ class CreateOrderRequestValidationTest {
     @Test
     void nullItemElementIsRejected() {
         CreateOrderRequest request =
-                new CreateOrderRequest(Collections.singletonList(null), validAddress());
+                new CreateOrderRequest("Ana Souza", Collections.singletonList(null), validAddress());
 
         assertThat(pathsOf(request)).containsExactly("items[0].<list element>");
     }
@@ -180,25 +195,54 @@ class CreateOrderRequestValidationTest {
 
     @Test
     void overlongProductNameIsRejected() {
-        assertThat(pathsOf(requestWith(new OrderItemRequest("x".repeat(151), 4990L, 2))))
+        assertThat(pathsOf(requestWith(new OrderItemRequest("x".repeat(121), 4990L, 2))))
                 .containsExactly("items[0].productName");
     }
 
     @Test
     void productNameAtTheLimitIsAccepted() {
-        assertThat(pathsOf(requestWith(new OrderItemRequest("x".repeat(150), 4990L, 2)))).isEmpty();
+        assertThat(pathsOf(requestWith(new OrderItemRequest("x".repeat(120), 4990L, 2)))).isEmpty();
+    }
+
+    @Test
+    void addressTextFieldsAtOneHundredTwentyCharactersAreAccepted() {
+        AddressDto address = new AddressDto("x".repeat(120), "x".repeat(120), "x".repeat(120),
+                "x".repeat(120), "x".repeat(120), "SP", "01001000");
+
+        assertThat(pathsOf(new CreateOrderRequest("Ana Souza", List.of(validItem()), address))).isEmpty();
+    }
+
+    @Test
+    void addressTextFieldsAboveOneHundredTwentyCharactersAreRejected() {
+        String overlong = "x".repeat(121);
+
+        assertThat(pathsOf(new CreateOrderRequest("Ana Souza", List.of(validItem()),
+                new AddressDto(overlong, "100", null, "Centro", "São Paulo", "SP", "01001000"))))
+                .containsExactly("deliveryAddress.street");
+        assertThat(pathsOf(new CreateOrderRequest("Ana Souza", List.of(validItem()),
+                new AddressDto("Rua", overlong, null, "Centro", "São Paulo", "SP", "01001000"))))
+                .containsExactly("deliveryAddress.number");
+        assertThat(pathsOf(new CreateOrderRequest("Ana Souza", List.of(validItem()),
+                new AddressDto("Rua", "100", overlong, "Centro", "São Paulo", "SP", "01001000"))))
+                .containsExactly("deliveryAddress.complement");
+        assertThat(pathsOf(new CreateOrderRequest("Ana Souza", List.of(validItem()),
+                new AddressDto("Rua", "100", null, overlong, "São Paulo", "SP", "01001000"))))
+                .containsExactly("deliveryAddress.district");
+        assertThat(pathsOf(new CreateOrderRequest("Ana Souza", List.of(validItem()),
+                new AddressDto("Rua", "100", null, "Centro", overlong, "SP", "01001000"))))
+                .containsExactly("deliveryAddress.city");
     }
 
     @Test
     void nullDeliveryAddressIsRejected() {
-        CreateOrderRequest request = new CreateOrderRequest(List.of(validItem()), null);
+        CreateOrderRequest request = new CreateOrderRequest("Ana Souza", List.of(validItem()), null);
 
         assertThat(pathsOf(request)).containsExactly("deliveryAddress");
     }
 
     @Test
     void addressConstraintsRunBecauseValidCascadesIntoTheAddress() {
-        CreateOrderRequest request = new CreateOrderRequest(List.of(validItem()),
+        CreateOrderRequest request = new CreateOrderRequest("Ana Souza", List.of(validItem()),
                 new AddressDto("", "100", null, "Centro", "São Paulo", "SP", "01001000"));
 
         assertThat(pathsOf(request)).containsExactly("deliveryAddress.street");
@@ -206,9 +250,9 @@ class CreateOrderRequestValidationTest {
 
     @Test
     void stateMustBeExactlyTwoCharacters() {
-        CreateOrderRequest tooLong = new CreateOrderRequest(List.of(validItem()),
+        CreateOrderRequest tooLong = new CreateOrderRequest("Ana Souza", List.of(validItem()),
                 new AddressDto("Rua", "100", null, "Centro", "São Paulo", "SPX", "01001000"));
-        CreateOrderRequest tooShort = new CreateOrderRequest(List.of(validItem()),
+        CreateOrderRequest tooShort = new CreateOrderRequest("Ana Souza", List.of(validItem()),
                 new AddressDto("Rua", "100", null, "Centro", "São Paulo", "S", "01001000"));
 
         assertThat(pathsOf(tooLong)).containsExactly("deliveryAddress.state");
@@ -217,9 +261,9 @@ class CreateOrderRequestValidationTest {
 
     @Test
     void zipCodeMustBeExactlyEightCharacters() {
-        CreateOrderRequest withDash = new CreateOrderRequest(List.of(validItem()),
+        CreateOrderRequest withDash = new CreateOrderRequest("Ana Souza", List.of(validItem()),
                 new AddressDto("Rua", "100", null, "Centro", "São Paulo", "SP", "01001-000"));
-        CreateOrderRequest tooShort = new CreateOrderRequest(List.of(validItem()),
+        CreateOrderRequest tooShort = new CreateOrderRequest("Ana Souza", List.of(validItem()),
                 new AddressDto("Rua", "100", null, "Centro", "São Paulo", "SP", "0100100"));
 
         assertThat(pathsOf(withDash)).containsExactly("deliveryAddress.zipCode");
@@ -228,7 +272,7 @@ class CreateOrderRequestValidationTest {
 
     @Test
     void complementIsOptional() {
-        CreateOrderRequest request = new CreateOrderRequest(List.of(validItem()),
+        CreateOrderRequest request = new CreateOrderRequest("Ana Souza", List.of(validItem()),
                 new AddressDto("Rua", "100", "", "Centro", "São Paulo", "SP", "01001000"));
 
         assertThat(pathsOf(request)).isEmpty();

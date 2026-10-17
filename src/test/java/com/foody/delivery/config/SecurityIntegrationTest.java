@@ -15,6 +15,7 @@ import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class SecurityIntegrationTest extends AbstractIntegrationTest {
@@ -32,14 +33,50 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
     @Test
     void ordersWithoutTokenReturns401() throws Exception {
         mockMvc.perform(get("/api/v1/orders"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().exists("WWW-Authenticate"))
+                .andExpect(header().string("Content-Type", "application/problem+json"))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Unauthorized"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").value("Authentication is required or the token is invalid"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders"))
+                .andExpect(jsonPath("$.properties").doesNotExist());
     }
 
     @Test
     void ordersWithGarbageTokenReturns401() throws Exception {
         mockMvc.perform(get("/api/v1/orders")
                         .header("Authorization", "Bearer not-a-real-jwt"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Unauthorized"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").value("Authentication is required or the token is invalid"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders"))
+                .andExpect(jsonPath("$.properties").doesNotExist());
+    }
+
+    @Test
+    void expiredTokenReturnsUnauthorizedProblemDetail() throws Exception {
+        Instant now = Instant.now();
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(JwtClaimsSet.builder()
+                .subject("user-1")
+                .issuedAt(now.minusSeconds(7200))
+                .expiresAt(now.minusSeconds(3600))
+                .build())).getTokenValue();
+
+        mockMvc.perform(get("/api/v1/orders")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().exists("WWW-Authenticate"))
+                .andExpect(header().string("Content-Type", "application/problem+json"))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Unauthorized"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").value("Authentication is required or the token is invalid"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders"))
+                .andExpect(jsonPath("$.properties").doesNotExist());
     }
 
     @Test

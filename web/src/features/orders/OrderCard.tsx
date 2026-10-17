@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { Link } from "react-router";
 import type { OrderResponse } from "../../api/types";
 import { maskCep } from "../../lib/cep";
 import { formatCentsBRL } from "../../lib/money";
-import { formatRelative } from "../../lib/time";
-import { ADVANCE_LABEL, CAN_CANCEL, NEXT_STATUS } from "./statusMeta";
-import { useStatusMutation } from "./useOrders";
+import { formatLocalDateTime, formatRelative } from "../../lib/time";
+import { StatusActions } from "./StatusActions";
 
 export function OrderCard({
   order,
@@ -13,17 +12,8 @@ export function OrderCard({
   order: OrderResponse;
   notify: (msg: string) => void;
 }) {
-  const [confirmingCancel, setConfirmingCancel] = useState(false);
-  const mutation = useStatusMutation((e) => {
-    notify(e.status === 409 ? "Transição inválida — o quadro foi atualizado." : e.message);
-  });
-
-  const next = NEXT_STATUS[order.status];
-  const advanceLabel = ADVANCE_LABEL[order.status];
-  const canCancel = CAN_CANCEL[order.status];
   const addr = order.deliveryAddress;
   const [first, ...rest] = order.items;
-  const busy = mutation.isPending;
 
   return (
     <article className="order-card card">
@@ -31,10 +21,15 @@ export function OrderCard({
         <span className="mono order-id" title={order.id}>
           #{order.id.slice(0, 8)}
         </span>
-        <time className="order-time" dateTime={order.createdAt}>
-          {formatRelative(order.createdAt)}
-        </time>
+        <span className="order-times">
+          <time className="order-time" dateTime={order.createdAt}>{formatRelative(order.createdAt)}</time>
+          <time className="order-time" dateTime={order.createdAt}>{formatLocalDateTime(order.createdAt)}</time>
+        </span>
       </header>
+
+      <Link className="order-customer" to={`/orders/${encodeURIComponent(order.id)}`}>
+        {order.customerName}
+      </Link>
 
       <p className="order-summary">
         {first?.quantity}× {first?.productName}
@@ -73,55 +68,11 @@ export function OrderCard({
 
       <footer className="order-card-bottom">
         <strong className="mono order-total">{formatCentsBRL(order.totalCents)}</strong>
-        {(next || canCancel) &&
-          (confirmingCancel ? (
-            <div className="order-actions" role="group" aria-label="Confirmar cancelamento">
-              <button
-                type="button"
-                className="btn btn-sm btn-ghost"
-                disabled={busy}
-                onClick={() => setConfirmingCancel(false)}
-              >
-                Voltar
-              </button>
-              <button
-                type="button"
-                className="btn btn-sm btn-primary order-cancel-confirm"
-                disabled={busy}
-                onClick={() =>
-                  mutation.mutate(
-                    { id: order.id, status: "CANCELADO" },
-                    { onSettled: () => setConfirmingCancel(false) },
-                  )
-                }
-              >
-                {busy ? "Cancelando…" : "Confirmar cancelamento"}
-              </button>
-            </div>
-          ) : (
-            <div className="order-actions">
-              {canCancel && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-danger-ghost"
-                  disabled={busy}
-                  onClick={() => setConfirmingCancel(true)}
-                >
-                  Cancelar
-                </button>
-              )}
-              {next && advanceLabel && (
-                <button
-                  type="button"
-                  className="btn btn-sm btn-primary"
-                  disabled={busy}
-                  onClick={() => mutation.mutate({ id: order.id, status: next })}
-                >
-                  {busy ? "Salvando…" : advanceLabel}
-                </button>
-              )}
-            </div>
-          ))}
+        <StatusActions
+          order={order}
+          compact
+          onError={(e) => notify(e.status === 409 ? "Transição inválida — o quadro foi atualizado." : e.message)}
+        />
       </footer>
     </article>
   );

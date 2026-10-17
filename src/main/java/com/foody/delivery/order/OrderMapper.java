@@ -27,6 +27,7 @@ public final class OrderMapper {
         Address address = order.getDeliveryAddress();
         return new OrderResponse(
                 order.getId(),
+                order.getCustomerName(),
                 order.getStatus().name(),
                 order.getTotalCents(),
                 order.getItems().stream()
