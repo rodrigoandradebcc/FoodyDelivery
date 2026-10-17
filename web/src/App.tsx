@@ -3,6 +3,7 @@ import { RequireAuth } from "./auth/auth";
 import AppShell from "./components/AppShell";
 import BoardPage from "./features/orders/BoardPage";
 import NewOrderPage from "./features/orders/NewOrderPage";
+import OrderDetailPage from "./features/orders/OrderDetailPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 
@@ -20,6 +21,7 @@ export default function App() {
       >
         <Route index element={<BoardPage />} />
         <Route path="orders/new" element={<NewOrderPage />} />
+        <Route path="orders/:id" element={<OrderDetailPage />} />
       </Route>
     </Routes>
   );
