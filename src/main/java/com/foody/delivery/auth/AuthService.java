@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.sqlite.SQLiteErrorCode;
 import org.sqlite.SQLiteException;
 
+import java.util.Locale;
 import java.util.Optional;
 
 @Service
@@ -69,20 +70,25 @@ public class AuthService {
      */
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
-            throw emailAlreadyRegistered(request.email());
+        String email = normalizeEmail(request.email());
+        if (userRepository.existsByEmail(email)) {
+            throw emailAlreadyRegistered(email);
         }
-        User user = User.register(request.name(), request.email(),
+        User user = User.register(request.name(), email,
                 passwordEncoder.encode(request.password()));
         try {
             userRepository.saveAndFlush(user);
         } catch (DataAccessException e) {
             if (isUniqueViolation(e)) {
-                throw emailAlreadyRegistered(request.email());
+                throw emailAlreadyRegistered(email);
             }
             throw e;
         }
         return new RegisterResponse(user.getId(), user.getName(), user.getEmail());
+    }
+
+    static String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     private static boolean isUniqueViolation(Throwable e) {
@@ -111,7 +117,7 @@ public class AuthService {
      */
     @Transactional(readOnly = true)
     public TokenResponse login(LoginRequest request) {
-        Optional<User> user = userRepository.findByEmail(request.email());
+        Optional<User> user = userRepository.findByEmail(normalizeEmail(request.email()));
         // Exactly one BCrypt verification runs on every login, found or not. The result
         // is consumed by the guard below, so it cannot be optimised away.
         boolean passwordMatches = passwordEncoder.matches(request.password(),

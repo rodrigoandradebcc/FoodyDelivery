@@ -1,11 +1,15 @@
 package com.foody.delivery.auth;
 
+import com.foody.delivery.auth.dto.LoginRequest;
 import com.foody.delivery.auth.dto.RegisterRequest;
+import com.foody.delivery.auth.dto.RegisterResponse;
+import com.foody.delivery.auth.dto.TokenResponse;
 import com.foody.delivery.shared.exception.ConflictException;
 import com.foody.delivery.user.User;
 import com.foody.delivery.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -15,6 +19,8 @@ import org.springframework.orm.jpa.JpaSystemException;
 import org.sqlite.SQLiteErrorCode;
 import org.sqlite.SQLiteException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -128,5 +134,32 @@ class AuthServiceTest {
         when(userRepository.saveAndFlush(any(User.class))).thenThrow(failure);
 
         assertThatThrownBy(() -> authService.register(REQUEST)).isSameAs(failure);
+    }
+
+    @Test
+    void registerNormalizesTheEmailBeforeCheckingAndStoring() {
+        when(userRepository.existsByEmail("rodrigo@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("senha-forte-123")).thenReturn("$2a$10$hash");
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+
+        RegisterResponse response = authService.register(
+                new RegisterRequest("Rodrigo", "  Rodrigo@Example.COM ", "senha-forte-123"));
+
+        verify(userRepository).existsByEmail("rodrigo@example.com");
+        verify(userRepository).saveAndFlush(saved.capture());
+        assertThat(saved.getValue().getEmail()).isEqualTo("rodrigo@example.com");
+        assertThat(response.email()).isEqualTo("rodrigo@example.com");
+    }
+
+    @Test
+    void loginNormalizesTheEmailBeforeLookup() {
+        User user = User.register("Rodrigo", "rodrigo@example.com", "$2a$10$hash");
+        when(userRepository.findByEmail("rodrigo@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("senha-forte-123", "$2a$10$hash")).thenReturn(true);
+        when(tokenService.issue(user)).thenReturn(new TokenResponse("t", "Bearer", 3600));
+
+        authService.login(new LoginRequest(" Rodrigo@Example.com", "senha-forte-123"));
+
+        verify(userRepository).findByEmail("rodrigo@example.com");
     }
 }

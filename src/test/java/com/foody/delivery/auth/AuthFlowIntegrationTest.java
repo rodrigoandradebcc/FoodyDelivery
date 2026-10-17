@@ -207,4 +207,25 @@ class AuthFlowIntegrationTest extends AbstractIntegrationTest {
                         .header("Authorization", "Bearer " + forged))
                 .andExpect(status().isUnauthorized());
     }
+
+    @Test
+    void emailIsCaseInsensitiveAcrossRegisterAndLogin() throws Exception {
+        String mixedCase = "Case-" + UUID.randomUUID() + "@Example.COM";
+        String lowerCase = mixedCase.toLowerCase();
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson(mixedCase)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.email").value(lowerCase));
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson(lowerCase, "senha-forte-123")))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson(lowerCase)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("An account with e-mail " + lowerCase + " already exists"));
+    }
 }
