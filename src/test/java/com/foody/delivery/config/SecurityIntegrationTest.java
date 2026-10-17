@@ -36,16 +36,25 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().exists("WWW-Authenticate"))
                 .andExpect(header().string("Content-Type", "application/problem+json"))
+                .andExpect(jsonPath("$.type").value("about:blank"))
                 .andExpect(jsonPath("$.title").value("Unauthorized"))
                 .andExpect(jsonPath("$.status").value(401))
-                .andExpect(jsonPath("$.instance").value("/api/v1/orders"));
+                .andExpect(jsonPath("$.detail").value("Authentication is required or the token is invalid"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders"))
+                .andExpect(jsonPath("$.properties").doesNotExist());
     }
 
     @Test
     void ordersWithGarbageTokenReturns401() throws Exception {
         mockMvc.perform(get("/api/v1/orders")
                         .header("Authorization", "Bearer not-a-real-jwt"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Unauthorized"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").value("Authentication is required or the token is invalid"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders"))
+                .andExpect(jsonPath("$.properties").doesNotExist());
     }
 
     @Test
@@ -62,9 +71,12 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().exists("WWW-Authenticate"))
                 .andExpect(header().string("Content-Type", "application/problem+json"))
+                .andExpect(jsonPath("$.type").value("about:blank"))
                 .andExpect(jsonPath("$.title").value("Unauthorized"))
                 .andExpect(jsonPath("$.status").value(401))
-                .andExpect(jsonPath("$.instance").value("/api/v1/orders"));
+                .andExpect(jsonPath("$.detail").value("Authentication is required or the token is invalid"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders"))
+                .andExpect(jsonPath("$.properties").doesNotExist());
     }
 
     @Test

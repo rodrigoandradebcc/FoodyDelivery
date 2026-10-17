@@ -195,13 +195,42 @@ class CreateOrderRequestValidationTest {
 
     @Test
     void overlongProductNameIsRejected() {
-        assertThat(pathsOf(requestWith(new OrderItemRequest("x".repeat(151), 4990L, 2))))
+        assertThat(pathsOf(requestWith(new OrderItemRequest("x".repeat(121), 4990L, 2))))
                 .containsExactly("items[0].productName");
     }
 
     @Test
     void productNameAtTheLimitIsAccepted() {
-        assertThat(pathsOf(requestWith(new OrderItemRequest("x".repeat(150), 4990L, 2)))).isEmpty();
+        assertThat(pathsOf(requestWith(new OrderItemRequest("x".repeat(120), 4990L, 2)))).isEmpty();
+    }
+
+    @Test
+    void addressTextFieldsAtOneHundredTwentyCharactersAreAccepted() {
+        AddressDto address = new AddressDto("x".repeat(120), "x".repeat(120), "x".repeat(120),
+                "x".repeat(120), "x".repeat(120), "SP", "01001000");
+
+        assertThat(pathsOf(new CreateOrderRequest("Ana Souza", List.of(validItem()), address))).isEmpty();
+    }
+
+    @Test
+    void addressTextFieldsAboveOneHundredTwentyCharactersAreRejected() {
+        String overlong = "x".repeat(121);
+
+        assertThat(pathsOf(new CreateOrderRequest("Ana Souza", List.of(validItem()),
+                new AddressDto(overlong, "100", null, "Centro", "São Paulo", "SP", "01001000"))))
+                .containsExactly("deliveryAddress.street");
+        assertThat(pathsOf(new CreateOrderRequest("Ana Souza", List.of(validItem()),
+                new AddressDto("Rua", overlong, null, "Centro", "São Paulo", "SP", "01001000"))))
+                .containsExactly("deliveryAddress.number");
+        assertThat(pathsOf(new CreateOrderRequest("Ana Souza", List.of(validItem()),
+                new AddressDto("Rua", "100", overlong, "Centro", "São Paulo", "SP", "01001000"))))
+                .containsExactly("deliveryAddress.complement");
+        assertThat(pathsOf(new CreateOrderRequest("Ana Souza", List.of(validItem()),
+                new AddressDto("Rua", "100", null, overlong, "São Paulo", "SP", "01001000"))))
+                .containsExactly("deliveryAddress.district");
+        assertThat(pathsOf(new CreateOrderRequest("Ana Souza", List.of(validItem()),
+                new AddressDto("Rua", "100", null, "Centro", overlong, "SP", "01001000"))))
+                .containsExactly("deliveryAddress.city");
     }
 
     @Test

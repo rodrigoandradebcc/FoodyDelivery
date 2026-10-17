@@ -7,11 +7,15 @@ import com.foody.delivery.order.dto.CreateOrderRequest;
 import com.foody.delivery.order.dto.OrderItemRequest;
 import com.foody.delivery.user.User;
 import com.foody.delivery.user.UserRepository;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,6 +24,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ContextRestartIntegrationTest {
 
     static final String JDBC_URL = TestDatabase.newTempSqliteUrl();
+
+    @AfterAll
+    static void deleteDatabaseFiles() throws IOException {
+        String databasePath = JDBC_URL.substring("jdbc:sqlite:".length(), JDBC_URL.indexOf('?'));
+        Files.deleteIfExists(Path.of(databasePath + "-wal"));
+        Files.deleteIfExists(Path.of(databasePath + "-shm"));
+        Files.deleteIfExists(Path.of(databasePath));
+    }
 
     @Test
     void orderSurvivesClosingAndStartingASpringContextOnTheSameDatabase() {
