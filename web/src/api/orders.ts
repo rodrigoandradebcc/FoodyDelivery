@@ -3,9 +3,7 @@ import type { CreateOrderRequest, OrderResponse, OrderStatus, PageResponse } fro
 
 export interface ListOrdersParams {
   status?: OrderStatus;
-
   page?: number;
-
   size?: number;
 }
 

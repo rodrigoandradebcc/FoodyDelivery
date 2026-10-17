@@ -16,13 +16,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-/**
- * Guards the OpenAPI document and the Swagger UI a reviewer actually uses.
- *
- * <p>Note the split of responsibility with {@code SecurityIntegrationTest}: that class owns the
- * question "is {@code /v3/api-docs} permitted?". This class owns "does the document say the right
- * thing, and can the UI load every asset it needs?".
- */
 class SwaggerIntegrationTest extends AbstractIntegrationTest {
 
     static final String JDBC_URL = newTempSqliteUrl();
@@ -41,10 +34,17 @@ class SwaggerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.paths['/api/v1/orders']").exists());
     }
 
-    /**
-     * The "Authorize" button in the UI only appears, and only sends an {@code Authorization}
-     * header, if the document declares an HTTP bearer scheme AND requires it.
-     */
+    @Test
+    void orderSchemasDocumentCustomerName() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.components.schemas.CreateOrderRequest.required", hasItems("customerName")))
+                .andExpect(jsonPath("$.components.schemas.CreateOrderRequest.properties.customerName.maxLength")
+                        .value(120))
+                .andExpect(jsonPath("$.components.schemas.OrderResponse.properties.customerName.type")
+                        .value("string"));
+    }
+
     @Test
     void documentDeclaresAndRequiresTheBearerJwtScheme() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
@@ -55,33 +55,19 @@ class SwaggerIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.security[0]['bearer-jwt']").exists());
     }
 
-    /**
-     * Regression guard for the {@code @ParameterObject} on {@code OrderController.list}.
-     *
-     * <p>{@code list} binds its parameters into the {@code ListQuery} record rather than taking
-     * three bare {@code @RequestParam}s (see the javadoc on that record for why). Left alone,
-     * springdoc documents that record as ONE opaque parameter named {@code query} whose schema is
-     * a {@code $ref} to {@code ListQuery} -- Swagger UI then renders a single unusable
-     * "query * object" text box and a reviewer cannot filter or page by hand. Asserting only that
-     * {@code /v3/api-docs} returns 200 would not catch that.
-     */
     @Test
     void listDocumentsStatusPageAndSizeAsThreeSeparateQueryParameters() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
-                // Exactly three, and nothing was collapsed into an object or a body.
                 .andExpect(jsonPath("$.paths['/api/v1/orders'].get.parameters.length()").value(3))
                 .andExpect(jsonPath("$.paths['/api/v1/orders'].get.requestBody").doesNotExist())
                 .andExpect(jsonPath("$.paths['/api/v1/orders'].get.parameters[*].name")
                         .value(containsInAnyOrder("status", "page", "size")))
-                // Every one of them is a query parameter, not a body/path/header parameter.
                 .andExpect(jsonPath("$.paths['/api/v1/orders'].get.parameters[*].in")
                         .value(everyItem(equalTo("query"))))
-                // No parameter is a $ref to a wrapper schema, and the wrapper schema is gone.
                 .andExpect(jsonPath("$.paths['/api/v1/orders'].get.parameters[*].schema.$ref")
                         .doesNotExist())
                 .andExpect(jsonPath("$.components.schemas.ListQuery").doesNotExist())
-                // The enum and the @Min bounds survive, so the UI renders a dropdown and validates.
                 .andExpect(jsonPath("$.paths['/api/v1/orders'].get.parameters[?(@.name=='status')].schema.enum[*]")
                         .value(hasItems(
                                 "RECEBIDO", "EM_PREPARO", "SAIU_PARA_ENTREGA", "ENTREGUE", "CANCELADO")))
@@ -91,15 +77,6 @@ class SwaggerIntegrationTest extends AbstractIntegrationTest {
                         .value(contains(1)));
     }
 
-    /**
-     * The UI is only usable if every asset it pulls is reachable while unauthenticated.
-     *
-     * <p>{@code SecurityConfig} permits {@code /swagger-ui/**} and {@code /v3/api-docs/**} but NOT
-     * {@code /webjars/**}, so this pins the assumption that springdoc serves the whole bundle --
-     * including {@code swagger-initializer.js} and the {@code swagger-config} the initializer
-     * fetches -- from under those two permitted prefixes. If a springdoc upgrade ever moves an
-     * asset to {@code /webjars/**}, this fails with a 401 instead of the UI silently breaking.
-     */
     @Test
     void everyAssetTheSwaggerUiLoadsIsReachableWithoutAuthentication() throws Exception {
         String[] assets = {
@@ -125,7 +102,6 @@ class SwaggerIntegrationTest extends AbstractIntegrationTest {
         }
     }
 
-    /** {@code /swagger-ui.html} is the URL a human types; it must land on the real UI. */
     @Test
     void swaggerUiHtmlRedirectsToTheUi() throws Exception {
         String location = mockMvc.perform(get("/swagger-ui.html"))
@@ -135,10 +111,6 @@ class SwaggerIntegrationTest extends AbstractIntegrationTest {
         assertThat(location).contains("/swagger-ui/index.html");
     }
 
-    /**
-     * The published document is the most public surface in the app. Nothing in it may leak the
-     * signing key, a stored password hash, or the on-disk database path.
-     */
     @Test
     void documentExposesNoKeyMaterialHashesOrDatabasePath() throws Exception {
         MvcResult result = mockMvc.perform(get("/v3/api-docs"))
@@ -154,7 +126,6 @@ class SwaggerIntegrationTest extends AbstractIntegrationTest {
         assertThat(body).doesNotContain("foody.db");
         assertThat(body).doesNotContain("jdbc:sqlite");
 
-        // The User entity is never exposed as a schema; only the auth DTOs are.
         assertThat(body).doesNotContain("\"User\"");
     }
 }

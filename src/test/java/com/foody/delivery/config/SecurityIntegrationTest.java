@@ -11,7 +11,11 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import java.time.Instant;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class SecurityIntegrationTest extends AbstractIntegrationTest {
@@ -29,23 +33,52 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
     @Test
     void ordersWithoutTokenReturns401() throws Exception {
         mockMvc.perform(get("/api/v1/orders"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().exists("WWW-Authenticate"))
+                .andExpect(header().string("Content-Type", "application/problem+json"))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Unauthorized"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").value("Authentication is required or the token is invalid"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders"))
+                .andExpect(jsonPath("$.properties").doesNotExist());
     }
 
     @Test
     void ordersWithGarbageTokenReturns401() throws Exception {
         mockMvc.perform(get("/api/v1/orders")
                         .header("Authorization", "Bearer not-a-real-jwt"))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Unauthorized"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").value("Authentication is required or the token is invalid"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders"))
+                .andExpect(jsonPath("$.properties").doesNotExist());
     }
 
-    /**
-     * Proves the boot-generated {@code JwtDecoder} bean is the one the resource-server
-     * filter uses: a token signed by our own {@code JwtEncoder} passes authentication and
-     * reaches the dispatcher, which 404s because no handler is mapped to this probe path.
-     * The path is deliberately one no controller will ever map, so this stays true
-     * after later tasks add real endpoints.
-     */
+    @Test
+    void expiredTokenReturnsUnauthorizedProblemDetail() throws Exception {
+        Instant now = Instant.now();
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(JwtClaimsSet.builder()
+                .subject("user-1")
+                .issuedAt(now.minusSeconds(7200))
+                .expiresAt(now.minusSeconds(3600))
+                .build())).getTokenValue();
+
+        mockMvc.perform(get("/api/v1/orders")
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isUnauthorized())
+                .andExpect(header().exists("WWW-Authenticate"))
+                .andExpect(header().string("Content-Type", "application/problem+json"))
+                .andExpect(jsonPath("$.type").value("about:blank"))
+                .andExpect(jsonPath("$.title").value("Unauthorized"))
+                .andExpect(jsonPath("$.status").value(401))
+                .andExpect(jsonPath("$.detail").value("Authentication is required or the token is invalid"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders"))
+                .andExpect(jsonPath("$.properties").doesNotExist());
+    }
+
     @Test
     void selfIssuedTokenAuthenticatesAndReachesTheDispatcher() throws Exception {
         Instant now = Instant.now();
@@ -65,5 +98,25 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
     void apiDocsIsPublic() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void preflightFromTheViteDevServerIsAllowedWithoutCredentials() throws Exception {
+        mockMvc.perform(options("/api/v1/orders")
+                        .header("Origin", "http://localhost:5173")
+                        .header("Access-Control-Request-Method", "POST")
+                        .header("Access-Control-Request-Headers", "Authorization, Content-Type"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:5173"))
+                .andExpect(header().string("Access-Control-Allow-Methods", containsString("PATCH")))
+                .andExpect(header().doesNotExist("Access-Control-Allow-Credentials"));
+    }
+
+    @Test
+    void preflightFromAnUnknownOriginIsRejected() throws Exception {
+        mockMvc.perform(options("/api/v1/orders")
+                        .header("Origin", "http://evil.example")
+                        .header("Access-Control-Request-Method", "POST"))
+                .andExpect(status().isForbidden());
     }
 }

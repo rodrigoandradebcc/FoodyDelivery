@@ -157,9 +157,24 @@ Regras de cadastro que valem conhecer antes do primeiro `POST /auth/register`: `
 72 é do BCrypt, e é medido em *bytes* — ver "Decisões"). Senha curta demais devolve `400`
 com o campo apontado na extensão `errors`.
 
+O `email` não diferencia maiúsculas de minúsculas: é gravado e comparado em minúsculas no
+cadastro e no login, e é assim que ele volta na resposta — `Rodrigo@Example.com` e
+`rodrigo@example.com` são a mesma conta.
+
+Um pedido exige `customerName` com 1 a 120 caracteres após remover espaços nas pontas e
+tem de `1` a `100` itens (`items` vazio ou com mais de `100` devolve `400` apontando
+`items`). Limites por item do pedido: `quantity` entre `1` e `1000`, `unitPriceCents` entre `0` e
+`100000000` (R$ 1.000.000,00). Número fracionário num campo inteiro (`"quantity": 2.5`),
+texto num campo numérico ou um valor desconhecido de `status` devolvem `400` com o campo
+apontado em `errors` — nunca são truncados nem aceitos.
+
 Erros seguem **RFC 7807 (`application/problem+json`)**: `400` validação (com a extensão
-`errors`, um objeto por campo inválido), `401` credenciais inválidas, `404` pedido
-inexistente, `409` transição de status inválida ou e-mail já cadastrado.
+`errors`, um objeto por campo inválido — inclusive tipo errado ou enum desconhecido no
+corpo e parâmetros de query inválidos), `401` credenciais inválidas, `404` pedido ou rota
+inexistente, `405` método não suportado (com `Allow`), `409` transição de status inválida,
+e-mail já cadastrado ou modificação concorrente do mesmo pedido, `406` `Accept` que não
+aceita JSON (ex.: `text/plain`; o corpo ainda vem como `application/problem+json`), `415`
+corpo sem `Content-Type: application/json`.
 
 ---
 
@@ -168,13 +183,13 @@ inexistente, `409` transição de status inválida ou e-mail já cadastrado.
 ```
 RECEBIDO           → EM_PREPARO, CANCELADO
 EM_PREPARO         → SAIU_PARA_ENTREGA, CANCELADO
-SAIU_PARA_ENTREGA  → ENTREGUE
+SAIU_PARA_ENTREGA  → ENTREGUE, CANCELADO
 ENTREGUE           → (terminal)
 CANCELADO          → (terminal)
 ```
 
 Qualquer outra transição — inclusive de um estado para ele mesmo — responde `409` com
-`ProblemDetail`. São 5 transições legais e **20 ilegais**, todas verificadas contra o
+`ProblemDetail`. São 6 transições legais e **19 ilegais**, todas verificadas contra o
 servidor rodando.
 
 ---
@@ -202,6 +217,7 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
 ID=$(curl -s -X POST http://localhost:8080/api/v1/orders \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{
+    "customerName": "Ana Souza",
     "items": [
       {"productName": "Pizza Calabresa", "unitPriceCents": 4990, "quantity": 2},
       {"productName": "Guaraná 2L", "unitPriceCents": 1500, "quantity": 1}
@@ -248,24 +264,36 @@ container nem instalar banco. Isso cobra um preço, e o preço foi pago explicit
   `DECIMAL` real — uma coluna declarada assim recebe afinidade `NUMERIC` e acaba
   armazenando ponto flutuante, que perde centavos. `double`/`float` são proibidos para
   dinheiro no projeto; inteiro de centavos é exato por construção.
-- **UUID como `varchar(36)` e datas como texto ISO-8601.** O SQLite não tem tipo nativo
-  para nenhum dos dois. Como o ISO-8601 ordena lexicograficamente na mesma ordem
-  cronológica, `ORDER BY created_at` funciona sem conversão.
-- **`journal_mode=WAL` + `busy_timeout=5000`** na URL de conexão — o SQLite aceita um
-  escritor por vez; o WAL evita que leituras bloqueiem a escrita e o timeout evita
-  `SQLITE_BUSY` imediato sob concorrência.
+- **UUID como `varchar(36)` e datas como texto ISO-8601 de largura fixa.** O SQLite não tem
+  tipo nativo para nenhum dos dois. `Instant.toString()` tem precisão variável
+  (`…:00Z`, `…:00.500Z`), e nesse formato a ordem lexicográfica **não** é a cronológica;
+  por isso o conversor grava sempre nove casas de fração (`…:00.000000000Z`), e aí
+  `ORDER BY created_at` funciona sem conversão. A listagem desempata por `id`.
+- **`journal_mode=WAL` + `busy_timeout=5000` + `foreign_keys=true`** na URL de conexão — o
+  SQLite aceita um escritor por vez; o WAL evita que leituras bloqueiem a escrita, o timeout
+  evita `SQLITE_BUSY` imediato sob concorrência, e sem `foreign_keys=true` o SQLite ignora
+  as cláusulas `REFERENCES` das migrations.
 - **Schema é do Flyway, não do Hibernate** (`ddl-auto: validate`). O Hibernate só valida
   que o mapeamento bate com o schema; nunca altera o banco. Migrations são aditivas,
   porque o `ALTER TABLE` do SQLite é limitado.
+- **Violação de `UNIQUE` não vira `DataIntegrityViolationException` no SQLite:** o dialeto
+  entrega um `JpaSystemException` genérico. `AuthService.register` inspeciona a cadeia de
+  causas por `SQLITE_CONSTRAINT_UNIQUE` para responder o mesmo `409` do caminho sequencial
+  quando dois cadastros do mesmo e-mail correm em paralelo.
 
 **`total_cents` é sempre calculado no servidor.** `Order.place` soma os itens. O DTO de
 criação **não tem campo de total** — não existe payload capaz de influenciar o valor
 gravado. Um pedido também nasce sempre `RECEBIDO`.
 
 **A máquina de estados mora no domínio.** As transições permitidas estão no enum
-`OrderStatus` e são impostas pelo agregado `Order.changeStatus`, não pelo controller. Uma
-consequência é deliberada: **depois de `SAIU_PARA_ENTREGA` o pedido não pode mais ser
-cancelado** — é regra de negócio, não esquecimento.
+`OrderStatus` e são impostas pelo agregado `Order.changeStatus`, não pelo controller.
+O cancelamento também é permitido depois de `SAIU_PARA_ENTREGA`.
+
+**Escrita concorrente no mesmo pedido.** `Order` tem uma coluna `version` (`@Version`,
+migration `V4`). Dois `PATCH /status` simultâneos sobre o mesmo pedido não se sobrescrevem:
+o segundo recebe `409 Concurrent modification` e precisa reler o pedido. O mesmo `409` vale
+quando quem perde a corrida esbarra no lock de escrita do SQLite (`SQLITE_BUSY`, que o
+Spring entrega como `ConcurrencyFailureException`) em vez do conflito de versão.
 
 **JWT com par RSA gerado em memória no boot** (RS256, `sub` = id do usuário, claim
 `email`, expiração de 1 hora). Nenhuma chave é commitada nem lida de arquivo.
@@ -314,14 +342,18 @@ web/src
 
 ## Testes
 
-**API — 111 testes**, todos verdes (`./mvnw test`): a matriz 5×5 completa da máquina de estados,
-validação de DTOs, `OrderService` e `AuthService` com Mockito, e integração ponta a ponta
-de auth, pedidos, persistência, segurança e OpenAPI sobre SQLite em arquivo temporário.
+**API — 212 testes**, todos verdes (`./mvnw test`): a matriz 5×5 completa da máquina de estados,
+validação de todos os DTOs, unidades (`Order`, `OrderItem`, `OrderMapper`, `TokenService`,
+`OrderService`, `AuthService`, conversor de `Instant`, validador de bytes), fatias
+`@WebMvcTest` dos dois controllers com a segurança real e o serviço mockado, fatias
+`@DataJpaTest` dos repositórios sobre SQLite + Flyway, e integração ponta a ponta de auth,
+pedidos, persistência (inclusive lock otimista), segurança (inclusive CORS) e OpenAPI sobre
+SQLite em arquivo temporário.
 
 **Web — 22 testes** (`cd web && npm test`): dinheiro em centavos (incluindo os casos em que
 um round-trip por float perderia um centavo), máscara/strip de CEP, a consulta ao ViaCEP
 (inclusive CEP inexistente, falha de rede e requisição cancelada), e o cliente HTTP contra
-as duas formas de 401 da API (filtro do Spring Security com corpo vazio × ProblemDetail de
+as duas formas de 401 da API (filtro do Spring Security com ProblemDetail × ProblemDetail de
 login inválido). `npm run build` roda o typecheck junto.
 
 ---
@@ -338,6 +370,5 @@ Dívida consciente no escopo de um exercício, não descuido:
   caminhos para não vazar pelo tempo de resposta.
 - **Swagger e `/v3/api-docs` ficam abertos** incondicionalmente; em produção sairiam por
   profile (`springdoc.api-docs.enabled=false`).
-- **Os `401` do filtro de segurança têm corpo vazio,** não `ProblemDetail` — o resource
-  server rejeita token ausente ou malformado antes do Spring MVC. Só os `401` levantados
-  na aplicação carregam corpo RFC 7807.
+- **Os `401` do filtro de segurança usam `ProblemDetail`**, inclusive para token ausente,
+  inválido ou expirado, e preservam o header `WWW-Authenticate`.

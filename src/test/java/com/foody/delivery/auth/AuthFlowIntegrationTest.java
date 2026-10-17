@@ -12,6 +12,12 @@ import org.springframework.test.context.DynamicPropertySource;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -79,17 +85,31 @@ class AuthFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.instance").value("/api/v1/auth/register"));
     }
 
-    /**
-     * The payload violates three constraints, so the assertion names all three fields. Asserting
-     * only that {@code errors} is a non-empty array would be satisfied by a broken implementation:
-     * with {@code @Email} deleted from {@code RegisterRequest.email} and {@code @Size(min = 8)}
-     * from {@code password}, the {@code @NotBlank} on {@code name} alone still produces a
-     * one-element array and the weaker test still passed. Both halves were verified by
-     * experiment: with {@code @Email} deleted the OLD assertion still reported BUILD SUCCESS,
-     * while this one fails with {@code Expected: (a collection containing "name" and a collection
-     * containing "email" and a collection containing "password") but: a collection containing
-     * "email" mismatches were: [was "password", was "name"]}.
-     */
+    @Test
+    void concurrentRegistrationsWithTheSameEmailReturnOne201AndOne409() throws Exception {
+        String email = uniqueEmail();
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            List<Future<Integer>> results = List.of(
+                    executor.submit(() -> registerAfter(start, email)),
+                    executor.submit(() -> registerAfter(start, email)));
+            start.countDown();
+            assertThat(List.of(results.get(0).get(30, TimeUnit.SECONDS), results.get(1).get(30, TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(201, 409);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private int registerAfter(CountDownLatch start, String email) throws Exception {
+        start.await(30, TimeUnit.SECONDS);
+        return mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson(email)))
+                .andReturn().getResponse().getStatus();
+    }
+
     @Test
     void invalidRegisterPayloadReturns400WithFieldErrors() throws Exception {
         mockMvc.perform(post("/api/v1/auth/register")
@@ -103,16 +123,9 @@ class AuthFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.errors[*].field", hasItems("name", "email", "password")));
     }
 
-    /**
-     * BCrypt's limit is 72 BYTES; {@code @Size(max = 72)} only counts characters. Nineteen
-     * emoji are 38 characters but 76 bytes, so before the {@code @MaxBytes} constraint this
-     * payload sailed past validation and blew up inside {@code BCryptPasswordEncoder.encode}
-     * with an {@code IllegalArgumentException}, which no advice handles — an HTTP 500 with a
-     * non-ProblemDetail body. It must now be an ordinary 400 that names the field.
-     */
     @Test
     void passwordOver72BytesReturns400NotAn500() throws Exception {
-        String emojiPassword = "🍕".repeat(19); // 38 chars, 76 UTF-8 bytes
+        String emojiPassword = "🍕".repeat(19);
         assertThat(emojiPassword.length()).isLessThanOrEqualTo(72);
         assertThat(emojiPassword.getBytes(StandardCharsets.UTF_8).length).isGreaterThan(72);
 
@@ -127,12 +140,6 @@ class AuthFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.errors[*].field", hasItem("password")));
     }
 
-    /**
-     * Guards {@link AuthService#DUMMY_PASSWORD_HASH}: if that constant were ever mangled into
-     * something BCrypt does not recognise, {@code matches} would bail out immediately instead
-     * of doing a full verification, and the unknown-e-mail timing leak would silently return.
-     * A timing assertion would be flaky, so this pins the property that makes the work real.
-     */
     @Test
     void dummyPasswordHashIsAGenuineBcrypt10Hash() {
         assertThat(AuthService.DUMMY_PASSWORD_HASH).matches("^\\$2a\\$10\\$[./A-Za-z0-9]{53}$");
@@ -157,7 +164,6 @@ class AuthFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.expiresIn").value(3600))
                 .andReturn().getResponse().getContentAsString();
 
-        // The token really carries sub = user id, the e-mail claim and a one-hour expiry.
         Jwt jwt = jwtDecoder.decode(objectMapper.readTree(loginBody).get("accessToken").asText());
         assertThat(jwt.getSubject()).isEqualTo(userId);
         assertThat(jwt.getClaimAsString("email")).isEqualTo(email);
@@ -184,7 +190,6 @@ class AuthFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isUnauthorized())
                 .andReturn().getResponse().getContentAsString();
 
-        // Same route, same generic ProblemDetail: nothing distinguishes the two causes.
         assertThat(wrongPasswordBody).isEqualTo(unknownEmailBody);
     }
 
@@ -206,5 +211,26 @@ class AuthFlowIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/v1/orders")
                         .header("Authorization", "Bearer " + forged))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void emailIsCaseInsensitiveAcrossRegisterAndLogin() throws Exception {
+        String mixedCase = "Case-" + UUID.randomUUID() + "@Example.COM";
+        String lowerCase = mixedCase.toLowerCase();
+
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson(mixedCase)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.email").value(lowerCase));
+        mockMvc.perform(post("/api/v1/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginJson(lowerCase, "senha-forte-123")))
+                .andExpect(status().isOk());
+        mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson(lowerCase)))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.detail").value("An account with e-mail " + lowerCase + " already exists"));
     }
 }

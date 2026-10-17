@@ -55,7 +55,7 @@ export function Column({
         </div>
       )}
 
-      {query.isError && (
+      {query.isError && !page && (
         <div className="column-empty">
           <p>Não foi possível carregar.</p>
           <button
@@ -91,10 +91,18 @@ export function Column({
               <OrderCard order={order} notify={notify} />
             </div>
           ))}
-          {page.totalElements > page.content.length && (
-            <p className="column-truncated">
-              +{page.totalElements - page.content.length} não exibidos
-            </p>
+          {query.isFetchNextPageError && (
+            <p className="column-page-error">Não foi possível carregar mais pedidos.</p>
+          )}
+          {query.hasNextPage && (
+            <button
+              type="button"
+              className="btn btn-sm btn-ghost column-load-more"
+              disabled={query.isFetchingNextPage}
+              onClick={() => query.fetchNextPage()}
+            >
+              {query.isFetchingNextPage ? "Carregando…" : "Carregar mais"}
+            </button>
           )}
         </div>
       )}

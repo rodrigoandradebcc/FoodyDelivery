@@ -47,7 +47,6 @@ export interface LoginRequest {
 export interface LoginResponse {
   accessToken: string;
   tokenType: "Bearer";
-
   expiresIn: number;
 }
 
@@ -63,19 +62,19 @@ export interface DeliveryAddress {
   complement: string | null;
   district: string;
   city: string;
-
   state: string;
-
   zipCode: string;
 }
 
 export interface CreateOrderRequest {
+  customerName: string;
   items: OrderItem[];
   deliveryAddress: DeliveryAddress;
 }
 
 export interface OrderResponse {
   id: string;
+  customerName: string;
   status: OrderStatus;
   totalCents: number;
   items: OrderItem[];

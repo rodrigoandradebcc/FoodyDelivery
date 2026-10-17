@@ -115,7 +115,7 @@ export const EMPTY_HINT: Record<OrderStatus, string> = {
 export const CAN_CANCEL: Record<OrderStatus, boolean> = {
   RECEBIDO: true,
   EM_PREPARO: true,
-  SAIU_PARA_ENTREGA: false,
+  SAIU_PARA_ENTREGA: true,
   ENTREGUE: false,
   CANCELADO: false,
 };

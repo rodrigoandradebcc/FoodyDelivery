@@ -1,7 +1,11 @@
 package com.foody.delivery.config;
 
+import java.net.URI;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -10,19 +14,22 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenAuthenticationEntryPoint;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import tools.jackson.databind.ObjectMapper;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, ObjectMapper objectMapper) throws Exception {
+        AuthenticationEntryPoint authenticationEntryPoint = authenticationEntryPoint(objectMapper);
         http
-                // Stateless token API: no session cookie, so CSRF protection is not applicable.
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session ->
@@ -34,15 +41,29 @@ public class SecurityConfig {
                                 "/swagger-ui.html",
                                 "/v3/api-docs/**").permitAll()
                         .anyRequest().authenticated())
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+                .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(authenticationEntryPoint))
+                .oauth2ResourceServer(oauth2 -> oauth2
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .jwt(Customizer.withDefaults()));
         return http.build();
+    }
+
+    private AuthenticationEntryPoint authenticationEntryPoint(ObjectMapper objectMapper) {
+        BearerTokenAuthenticationEntryPoint bearer = new BearerTokenAuthenticationEntryPoint();
+        return (request, response, exception) -> {
+            bearer.commence(request, response, exception);
+            ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED,
+                    "Authentication is required or the token is invalid");
+            problem.setType(URI.create("about:blank"));
+            problem.setTitle("Unauthorized");
+            problem.setInstance(URI.create(request.getRequestURI()));
+            response.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+            response.getOutputStream().write(objectMapper.writeValueAsBytes(problem));
+        };
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        // Dev-only browser clients (Vite dev server and `vite preview`).
-        // Bearer tokens travel in the Authorization header, never in cookies,
-        // so allowCredentials stays false — and origins are still explicit, not "*".
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",

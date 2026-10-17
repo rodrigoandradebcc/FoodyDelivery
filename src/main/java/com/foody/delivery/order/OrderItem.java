@@ -25,7 +25,6 @@ public class OrderItem {
     private int quantity;
 
     protected OrderItem() {
-        // JPA
     }
 
     public OrderItem(String productName, long unitPriceCents, int quantity) {
@@ -52,6 +51,6 @@ public class OrderItem {
     }
 
     public long subtotalCents() {
-        return unitPriceCents * quantity;
+        return Math.multiplyExact(unitPriceCents, quantity);
     }
 }

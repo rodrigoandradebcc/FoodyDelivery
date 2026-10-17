@@ -40,14 +40,6 @@ class OrderServiceTest {
     @InjectMocks
     private OrderService orderService;
 
-    /**
-     * Both address mappings are 7 positional String arguments, so a street/district or
-     * city/district transposition is invisible to the compiler and can only be caught by
-     * asserting every component. The seven values below are deliberately PAIRWISE
-     * DISTINCT -- if any two matched, a swap between exactly those two would still pass.
-     * complement is non-null here so it takes part in that guarantee;
-     * {@link #nullComplementSurvivesBothDirections()} covers the nullable case separately.
-     */
     private static AddressDto anyAddress() {
         return new AddressDto("Rua das Flores", "100", "Apto 42", "Centro",
                 "São Paulo", "SP", "01001000");
@@ -59,7 +51,7 @@ class OrderServiceTest {
     }
 
     private static CreateOrderRequest requestWithTwoItems() {
-        return new CreateOrderRequest(
+        return new CreateOrderRequest("Ana Souza",
                 List.of(new OrderItemRequest("Pizza Calabresa", 4990L, 2),
                         new OrderItemRequest("Guaraná 2L", 1500L, 1)),
                 anyAddress());
@@ -83,18 +75,13 @@ class OrderServiceTest {
         assertThat(response.status()).isEqualTo("RECEBIDO");
     }
 
-    /**
-     * The strongest guarantee that a client cannot influence the stored total is
-     * structural: there is no field to send it in. If someone ever adds one to the
-     * request record, this fails and forces the decision to be made again on purpose.
-     */
     @Test
     void createOrderRequestHasNoClientSuppliedTotalField() {
         List<String> components = Arrays.stream(CreateOrderRequest.class.getRecordComponents())
                 .map(RecordComponent::getName)
                 .toList();
 
-        assertThat(components).containsExactly("items", "deliveryAddress");
+        assertThat(components).containsExactly("customerName", "items", "deliveryAddress");
     }
 
     @Test
@@ -110,12 +97,6 @@ class OrderServiceTest {
         assertThat(saved.getValue().getItems()).hasSize(2);
     }
 
-    /**
-     * The REQUEST direction, OrderMapper.toAddress: DTO -> domain. Asserted against the
-     * domain object rather than by round-tripping back to a DTO, because a transposition
-     * present in BOTH toAddress and toResponse would cancel out in a round trip and leave
-     * the wrong values in the database.
-     */
     @Test
     void createMapsEveryAddressComponentIntoTheDomain() {
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -134,12 +115,11 @@ class OrderServiceTest {
         assertThat(address.getZipCode()).isEqualTo("01001000");
     }
 
-    /** complement is the one nullable address component; it must stay null both ways. */
     @Test
     void nullComplementSurvivesBothDirections() {
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
         ArgumentCaptor<Order> saved = ArgumentCaptor.forClass(Order.class);
-        CreateOrderRequest request = new CreateOrderRequest(
+        CreateOrderRequest request = new CreateOrderRequest("Ana Souza",
                 List.of(new OrderItemRequest("Pizza Calabresa", 4990L, 2)),
                 new AddressDto("Rua das Flores", "100", null, "Centro",
                         "São Paulo", "SP", "01001000"));
@@ -153,7 +133,7 @@ class OrderServiceTest {
 
     @Test
     void validTransitionUpdatesStatus() {
-        Order order = Order.place("user-1",
+        Order order = Order.place("user-1", "Ana Souza",
                 List.of(new OrderItem("Pizza", 4990L, 1)), anyDomainAddress());
         when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -165,7 +145,7 @@ class OrderServiceTest {
 
     @Test
     void invalidTransitionThrowsConflictAndDoesNotSave() {
-        Order order = Order.place("user-1",
+        Order order = Order.place("user-1", "Ana Souza",
                 List.of(new OrderItem("Pizza", 4990L, 1)), anyDomainAddress());
         when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
 
@@ -192,7 +172,7 @@ class OrderServiceTest {
 
     @Test
     void getByIdReturnsTheMappedOrder() {
-        Order order = Order.place("user-1",
+        Order order = Order.place("user-1", "Ana Souza",
                 List.of(new OrderItem("Pizza", 4990L, 3)), anyDomainAddress());
         when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
 
@@ -203,9 +183,6 @@ class OrderServiceTest {
         assertThat(response.items()).singleElement()
                 .satisfies(item -> assertThat(item.productName()).isEqualTo("Pizza"));
 
-        // The RESPONSE direction, OrderMapper.toResponse: domain -> DTO. All seven
-        // components asserted; the address is built from 7 positional Strings, so a
-        // transposition between any two of them is otherwise silent.
         AddressDto address = response.deliveryAddress();
         assertThat(address.street()).isEqualTo("Rua das Flores");
         assertThat(address.number()).isEqualTo("100");
@@ -218,7 +195,7 @@ class OrderServiceTest {
 
     @Test
     void listWithoutStatusFiltersNothingAndCopiesPageMetadata() {
-        Order order = Order.place("user-1",
+        Order order = Order.place("user-1", "Ana Souza",
                 List.of(new OrderItem("Pizza", 4990L, 1)), anyDomainAddress());
         when(orderRepository.findAll(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(order), PageRequest.of(1, 2), 5));
@@ -236,7 +213,7 @@ class OrderServiceTest {
 
     @Test
     void listWithStatusDelegatesToFindByStatusSortedByNewestFirst() {
-        Order order = Order.place("user-1",
+        Order order = Order.place("user-1", "Ana Souza",
                 List.of(new OrderItem("Pizza", 4990L, 1)), anyDomainAddress());
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         when(orderRepository.findByStatus(eq(OrderStatus.RECEBIDO), any(Pageable.class)))
@@ -250,5 +227,22 @@ class OrderServiceTest {
                 .isNotNull()
                 .satisfies(order2 -> assertThat(order2.getDirection()).isEqualTo(Sort.Direction.DESC));
         verify(orderRepository, never()).findAll(any(Pageable.class));
+    }
+
+    @Test
+    void listBreaksCreatedAtTiesByIdSoPageBoundariesAreStable() {
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        when(orderRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+        orderService.list(null, 0, 20);
+
+        verify(orderRepository).findAll(pageable.capture());
+        List<Sort.Order> orders = pageable.getValue().getSort().toList();
+        assertThat(orders).hasSize(2);
+        assertThat(orders.get(0).getProperty()).isEqualTo("createdAt");
+        assertThat(orders.get(0).getDirection()).isEqualTo(Sort.Direction.DESC);
+        assertThat(orders.get(1).getProperty()).isEqualTo("id");
+        assertThat(orders.get(1).getDirection()).isEqualTo(Sort.Direction.DESC);
     }
 }

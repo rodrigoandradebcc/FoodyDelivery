@@ -39,11 +39,6 @@ class JwtKeyConfigTest {
         assertThat(jwt.getClaimAsString("email")).isEqualTo("rodrigo@example.com");
     }
 
-    /**
-     * The signature check is the security-load-bearing property of this config: the decoder
-     * must be pinned to OUR public key, not merely "some" key. A token that is structurally
-     * a perfectly valid RS256 JWT, but signed by an independent keypair, must be rejected.
-     */
     @Test
     void decoderRejectsTokenSignedByAnotherKeypair() throws Exception {
         JwtKeyConfig config = new JwtKeyConfig();
@@ -64,7 +59,6 @@ class JwtKeyConfigTest {
         assertThatThrownBy(() -> decoder.decode(foreignToken))
                 .isInstanceOf(BadJwtException.class)
                 .isInstanceOf(JwtException.class)
-                // Pins the REASON for the rejection: the signature, not an expiry or a parse error.
                 .hasMessageContaining("signature");
     }
 }

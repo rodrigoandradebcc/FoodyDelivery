@@ -12,6 +12,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+import org.hibernate.annotations.OptimisticLock;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -29,6 +31,9 @@ public class Order {
     @Column(name = "user_id", nullable = false, length = 36)
     private String userId;
 
+    @Column(name = "customer_name", nullable = false, length = 120)
+    private String customerName;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private OrderStatus status;
@@ -41,6 +46,7 @@ public class Order {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "order_id", nullable = false)
+    @OptimisticLock(excluded = true)
     private List<OrderItem> items = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false)
@@ -49,32 +55,31 @@ public class Order {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    @Version
+    @Column(nullable = false)
+    private long version;
+
     protected Order() {
-        // JPA
     }
 
-    /**
-     * Orders are born RECEBIDO and the total is ALWAYS computed here,
-     * on the server, from the items. Never accepted from the client.
-     */
-    public static Order place(String userId, List<OrderItem> items, Address deliveryAddress) {
+    public static Order place(String userId, String customerName, List<OrderItem> items, Address deliveryAddress) {
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("Order requires at least one item");
         }
         Order order = new Order();
         order.id = UUID.randomUUID().toString();
         order.userId = userId;
+        order.customerName = customerName;
         order.status = OrderStatus.RECEBIDO;
         order.items = new ArrayList<>(items);
         order.deliveryAddress = deliveryAddress;
-        order.totalCents = items.stream().mapToLong(OrderItem::subtotalCents).sum();
+        order.totalCents = items.stream().mapToLong(OrderItem::subtotalCents).reduce(0L, Math::addExact);
         Instant now = Instant.now();
         order.createdAt = now;
         order.updatedAt = now;
         return order;
     }
 
-    /** Transition rule enforced in the domain; invalid transition -> 409. */
     public void changeStatus(OrderStatus next) {
         if (!status.canTransitionTo(next)) {
             throw new ConflictException("Invalid status transition",
@@ -90,6 +95,10 @@ public class Order {
 
     public String getUserId() {
         return userId;
+    }
+
+    public String getCustomerName() {
+        return customerName;
     }
 
     public OrderStatus getStatus() {
@@ -114,5 +123,9 @@ public class Order {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public long getVersion() {
+        return version;
     }
 }
