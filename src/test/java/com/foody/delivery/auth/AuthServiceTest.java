@@ -5,6 +5,7 @@ import com.foody.delivery.auth.dto.RegisterRequest;
 import com.foody.delivery.auth.dto.RegisterResponse;
 import com.foody.delivery.auth.dto.TokenResponse;
 import com.foody.delivery.shared.exception.ConflictException;
+import com.foody.delivery.shared.exception.UnauthorizedException;
 import com.foody.delivery.user.User;
 import com.foody.delivery.user.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -161,5 +162,66 @@ class AuthServiceTest {
         authService.login(new LoginRequest(" Rodrigo@Example.com", "senha-forte-123"));
 
         verify(userRepository).findByEmail("rodrigo@example.com");
+    }
+
+    private static final LoginRequest LOGIN = new LoginRequest("rodrigo@example.com", "senha-forte-123");
+
+    @Test
+    void registerReturnsTheStoredIdNameAndEmail() {
+        when(userRepository.existsByEmail("rodrigo@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("senha-forte-123")).thenReturn("$2a$10$hash");
+        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
+
+        RegisterResponse response = authService.register(REQUEST);
+
+        verify(userRepository).saveAndFlush(saved.capture());
+        assertThat(saved.getValue().getPasswordHash()).isEqualTo("$2a$10$hash");
+        assertThat(response.id()).isEqualTo(saved.getValue().getId()).hasSize(36);
+        assertThat(response.name()).isEqualTo("Rodrigo");
+        assertThat(response.email()).isEqualTo("rodrigo@example.com");
+    }
+
+    @Test
+    void loginIssuesTokenWhenPasswordMatches() {
+        User user = User.register("Rodrigo", "rodrigo@example.com", "$2a$10$hash");
+        TokenResponse token = new TokenResponse("t", "Bearer", 3600);
+        when(userRepository.findByEmail("rodrigo@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("senha-forte-123", "$2a$10$hash")).thenReturn(true);
+        when(tokenService.issue(user)).thenReturn(token);
+
+        assertThat(authService.login(LOGIN)).isSameAs(token);
+    }
+
+    @Test
+    void loginWithWrongPasswordIsUnauthorizedAndIssuesNoToken() {
+        User user = User.register("Rodrigo", "rodrigo@example.com", "$2a$10$hash");
+        when(userRepository.findByEmail("rodrigo@example.com")).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("senha-forte-123", "$2a$10$hash")).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.login(LOGIN))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("Invalid e-mail or password");
+        verify(tokenService, never()).issue(any());
+    }
+
+    @Test
+    void loginWithUnknownEmailStillRunsOneBcryptCheckAgainstTheDummyHash() {
+        when(userRepository.findByEmail("rodrigo@example.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.matches("senha-forte-123", AuthService.DUMMY_PASSWORD_HASH)).thenReturn(false);
+
+        assertThatThrownBy(() -> authService.login(LOGIN))
+                .isInstanceOf(UnauthorizedException.class)
+                .hasMessage("Invalid e-mail or password");
+        verify(passwordEncoder).matches("senha-forte-123", AuthService.DUMMY_PASSWORD_HASH);
+        verify(tokenService, never()).issue(any());
+    }
+
+    @Test
+    void guessingTheDummyPlaintextNeverYieldsAToken() {
+        when(userRepository.findByEmail("rodrigo@example.com")).thenReturn(Optional.empty());
+        when(passwordEncoder.matches("senha-forte-123", AuthService.DUMMY_PASSWORD_HASH)).thenReturn(true);
+
+        assertThatThrownBy(() -> authService.login(LOGIN)).isInstanceOf(UnauthorizedException.class);
+        verify(tokenService, never()).issue(any());
     }
 }
