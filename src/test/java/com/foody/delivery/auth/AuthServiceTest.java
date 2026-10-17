@@ -9,7 +9,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.hibernate.exception.GenericJDBCException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.orm.jpa.JpaSystemException;
+import org.sqlite.SQLiteErrorCode;
+import org.sqlite.SQLiteException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -53,15 +57,21 @@ class AuthServiceTest {
     private static final RegisterRequest REQUEST =
             new RegisterRequest("Rodrigo", "rodrigo@example.com", "senha-forte-123");
 
+    private static DataAccessException uniqueEmailViolation() {
+        SQLiteException sqlite = new SQLiteException(
+                "[SQLITE_CONSTRAINT_UNIQUE] A UNIQUE constraint failed (UNIQUE constraint failed: users.email)",
+                SQLiteErrorCode.SQLITE_CONSTRAINT_UNIQUE);
+        return new JpaSystemException(new GenericJDBCException("could not execute statement", sqlite,
+                "insert into users (created_at,email,name,password_hash,id) values (?,?,?,?,?)"));
+    }
+
     @Test
     void uniqueConstraintViolationBecomesTheSameConflictAsThePreCheck() {
         // The pre-check passes: this is the racing case, where the duplicate appeared between
         // the existsByEmail and the INSERT.
         when(userRepository.existsByEmail(REQUEST.email())).thenReturn(false);
         when(passwordEncoder.encode(REQUEST.password())).thenReturn("$2a$10$irrelevant");
-        when(userRepository.saveAndFlush(any(User.class))).thenThrow(
-                new DataIntegrityViolationException(
-                        "could not execute statement [UNIQUE constraint failed: users.email]"));
+        when(userRepository.saveAndFlush(any(User.class))).thenThrow(uniqueEmailViolation());
 
         assertThatThrownBy(() -> authService.register(REQUEST))
                 .isInstanceOf(ConflictException.class)
@@ -84,7 +94,7 @@ class AuthServiceTest {
         when(userRepository.existsByEmail(REQUEST.email())).thenReturn(false);
         when(passwordEncoder.encode(REQUEST.password())).thenReturn("$2a$10$irrelevant");
         when(userRepository.saveAndFlush(any(User.class)))
-                .thenThrow(new DataIntegrityViolationException("UNIQUE constraint failed"));
+                .thenThrow(uniqueEmailViolation());
         ConflictException racing = catchThrowableOfType(ConflictException.class,
                 () -> authService.register(REQUEST));
 
@@ -108,5 +118,15 @@ class AuthServiceTest {
 
         verify(userRepository).saveAndFlush(any(User.class));
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void unrelatedDatabaseFailuresAreNotDisguisedAsConflicts() {
+        when(userRepository.existsByEmail(REQUEST.email())).thenReturn(false);
+        when(passwordEncoder.encode(REQUEST.password())).thenReturn("$2a$10$irrelevant");
+        JpaSystemException failure = new JpaSystemException(new RuntimeException("disk I/O error"));
+        when(userRepository.saveAndFlush(any(User.class))).thenThrow(failure);
+
+        assertThatThrownBy(() -> authService.register(REQUEST)).isSameAs(failure);
     }
 }

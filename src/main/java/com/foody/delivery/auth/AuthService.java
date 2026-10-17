@@ -8,10 +8,12 @@ import com.foody.delivery.shared.exception.ConflictException;
 import com.foody.delivery.shared.exception.UnauthorizedException;
 import com.foody.delivery.user.User;
 import com.foody.delivery.user.UserRepository;
-import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.sqlite.SQLiteErrorCode;
+import org.sqlite.SQLiteException;
 
 import java.util.Optional;
 
@@ -74,10 +76,26 @@ public class AuthService {
                 passwordEncoder.encode(request.password()));
         try {
             userRepository.saveAndFlush(user);
-        } catch (DataIntegrityViolationException e) {
-            throw emailAlreadyRegistered(request.email());
+        } catch (DataAccessException e) {
+            if (isUniqueViolation(e)) {
+                throw emailAlreadyRegistered(request.email());
+            }
+            throw e;
         }
         return new RegisterResponse(user.getId(), user.getName(), user.getEmail());
+    }
+
+    private static boolean isUniqueViolation(Throwable e) {
+        for (Throwable cause = e; cause != null; cause = cause.getCause()) {
+            if (cause instanceof SQLiteException sqlite
+                    && sqlite.getResultCode() == SQLiteErrorCode.SQLITE_CONSTRAINT_UNIQUE) {
+                return true;
+            }
+            if (cause.getCause() == cause) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private static ConflictException emailAlreadyRegistered(String email) {
