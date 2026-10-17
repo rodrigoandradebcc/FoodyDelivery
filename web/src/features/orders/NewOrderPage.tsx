@@ -314,6 +314,7 @@ export default function NewOrderPage() {
                 <button
                   type="button"
                   className="btn btn-sm btn-danger-ghost no-item-remove"
+                  aria-label={`Remover item ${i + 1}`}
                   onClick={() => remove(i)}
                 >
                   Remover

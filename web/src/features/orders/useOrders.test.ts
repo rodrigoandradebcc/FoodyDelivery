@@ -28,4 +28,19 @@ describe("order pages", () => {
     ]);
     expect(flattenOrderPages([])).toEqual([]);
   });
+
+  it("keeps the first occurrence when offset pages overlap", () => {
+    const first = page(0, 2, ["new", "repeated"]);
+    const second = page(1, 2, ["repeated", "old"]);
+    const earlier = { id: "repeated", version: "first" };
+    const later = { id: "repeated", version: "second" };
+    expect(flattenOrderPages([
+      { ...first, content: [{ id: "new", version: "first" }, earlier] },
+      { ...second, content: [later, { id: "old", version: "second" }] },
+    ])).toEqual([
+      { id: "new", version: "first" },
+      earlier,
+      { id: "old", version: "second" },
+    ]);
+  });
 });

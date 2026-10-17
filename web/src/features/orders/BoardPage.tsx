@@ -36,14 +36,12 @@ export default function BoardPage() {
       </p>
 
       {isDesktop ? (
-        <>
-          <div className="board-columns">
-            {PIPELINE.map((status) => (
-              <Column key={status} status={status} notify={setToast} />
-            ))}
-            <Column status="CANCELADO" notify={setToast} />
-          </div>
-        </>
+        <div className="board-columns">
+          {PIPELINE.map((status) => (
+            <Column key={status} status={status} notify={setToast} />
+          ))}
+          <Column status="CANCELADO" notify={setToast} />
+        </div>
       ) : (
         <MobileBoard notify={setToast} />
       )}
