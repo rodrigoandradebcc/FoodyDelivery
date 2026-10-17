@@ -209,4 +209,28 @@ class OrderControllerTest {
                 .andExpect(jsonPath("$.errors[0].field").value("items[0].quantity"))
                 .andExpect(jsonPath("$.errors[0].message").value("invalid value 'two'"));
     }
+
+    @Test
+    void fractionalQuantityIs400NamingTheFieldInsteadOfSilentTruncation() throws Exception {
+        mockMvc.perform(post("/api/v1/orders").with(jwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_ORDER_JSON.replace("\"quantity\": 2", "\"quantity\": 2.5")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[0].field").value("items[0].quantity"));
+        verify(orderService, never()).create(any(), any());
+    }
+
+    @Test
+    void numericStringsAreStillCoerced() throws Exception {
+        CreateOrderRequest expected = new CreateOrderRequest(
+                List.of(new OrderItemRequest("Pizza Calabresa", 4990L, 2)),
+                new AddressDto("Rua das Flores", "100", null, "Centro", "São Paulo", "SP", "01001000"));
+        when(orderService.create("user-1", expected)).thenReturn(response("RECEBIDO"));
+
+        mockMvc.perform(post("/api/v1/orders").with(jwt().jwt(token -> token.subject("user-1")))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_ORDER_JSON.replace("\"unitPriceCents\": 4990", "\"unitPriceCents\": \"4990\"")))
+                .andExpect(status().isCreated());
+    }
 }

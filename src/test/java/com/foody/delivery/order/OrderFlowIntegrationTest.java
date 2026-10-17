@@ -526,4 +526,16 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(result -> org.assertj.core.api.Assertions
                         .assertThat(result.getResponse().getContentAsString()).isEmpty());
     }
+
+    @Test
+    void fractionalPriceIsRejectedInsteadOfTruncated() throws Exception {
+        String token = authToken();
+        mockMvc.perform(post("/api/v1/orders")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_ORDER_JSON.replace("\"unitPriceCents\": 4990", "\"unitPriceCents\": 49.99")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[*].field", hasItem("items[0].unitPriceCents")));
+    }
 }
