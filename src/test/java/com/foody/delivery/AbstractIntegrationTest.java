@@ -6,8 +6,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
-import java.util.UUID;
-
 /**
  * Base for all integration tests. Each concrete test class MUST declare its own
  * temp-FILE SQLite database (one per test class, per the spec — NEVER :memory:,
@@ -35,7 +33,6 @@ public abstract class AbstractIntegrationTest {
     protected ObjectMapper objectMapper;
 
     protected static String newTempSqliteUrl() {
-        String path = System.getProperty("java.io.tmpdir") + "/foody-test-" + UUID.randomUUID() + ".db";
-        return "jdbc:sqlite:" + path + "?journal_mode=WAL&busy_timeout=5000";
+        return TestDatabase.newTempSqliteUrl();
     }
 }
