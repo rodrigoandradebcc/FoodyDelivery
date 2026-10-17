@@ -66,7 +66,7 @@ export function MobileBoard({ notify }: { notify: (msg: string) => void }) {
             <div className="skeleton-card" />
           </>
         )}
-        {query.isError && (
+        {query.isError && !page && (
           <div className="column-empty">
             <p>Não foi possível carregar.</p>
             <button
@@ -84,10 +84,18 @@ export function MobileBoard({ notify }: { notify: (msg: string) => void }) {
         {page?.content.map((order) => (
           <OrderCard key={order.id} order={order} notify={notify} />
         ))}
-        {page && page.totalElements > page.content.length && (
-          <p className="column-truncated">
-            +{page.totalElements - page.content.length} não exibidos
-          </p>
+        {query.isFetchNextPageError && (
+          <p className="column-page-error">Não foi possível carregar mais pedidos.</p>
+        )}
+        {query.hasNextPage && (
+          <button
+            type="button"
+            className="btn btn-sm btn-ghost column-load-more"
+            disabled={query.isFetchingNextPage}
+            onClick={() => query.fetchNextPage()}
+          >
+            {query.isFetchingNextPage ? "Carregando…" : "Carregar mais"}
+          </button>
         )}
       </div>
     </div>

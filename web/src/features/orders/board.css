@@ -75,10 +75,13 @@
   color: var(--line-strong);
   opacity: 0.55;
 }
-.column-truncated {
+.column-page-error {
   color: var(--ink-soft);
   font-size: var(--text-sm);
   text-align: center;
+}
+.column-load-more {
+  align-self: center;
 }
 
 .order-card {

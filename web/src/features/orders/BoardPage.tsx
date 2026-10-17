@@ -1,7 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router";
 import { useMediaQuery } from "../../lib/useMediaQuery";
-import { CanceledTray } from "./CanceledTray";
 import { Column } from "./Column";
 import { MobileBoard } from "./MobileBoard";
 import { PIPELINE } from "./statusMeta";
@@ -9,15 +9,17 @@ import "./board.css";
 
 export default function BoardPage() {
   const location = useLocation();
+  const queryClient = useQueryClient();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     if ((location.state as { created?: boolean } | null)?.created) {
       setToast("Pedido criado.");
+      void queryClient.invalidateQueries({ queryKey: ["orders"] });
       window.history.replaceState({}, "");
     }
-  }, [location.state]);
+  }, [location.state, queryClient]);
 
   useEffect(() => {
     if (!toast) return;
@@ -30,7 +32,7 @@ export default function BoardPage() {
       <h1 className="board-title">Pedidos</h1>
       <p className="board-lede">
         Cada pedido segue as quatro etapas abaixo. Cancelar tira o pedido do fluxo — os
-        cancelados ficam na bandeja no fim do quadro.
+        cancelados ficam na última coluna do quadro.
       </p>
 
       {isDesktop ? (
@@ -39,8 +41,8 @@ export default function BoardPage() {
             {PIPELINE.map((status) => (
               <Column key={status} status={status} notify={setToast} />
             ))}
+            <Column status="CANCELADO" notify={setToast} />
           </div>
-          <CanceledTray notify={setToast} />
         </>
       ) : (
         <MobileBoard notify={setToast} />
