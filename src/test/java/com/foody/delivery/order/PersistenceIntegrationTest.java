@@ -52,12 +52,13 @@ class PersistenceIntegrationTest extends AbstractIntegrationTest {
 
         Address address = new Address("Rua das Flores", "100", null, "Centro",
                 "São Paulo", "SP", "01001000");
-        Order order = Order.place(user.getId(),
+        Order order = Order.place(user.getId(), "Ana Souza",
                 List.of(new OrderItem("Pizza Calabresa", 4990L, 2)), address);
         orderRepository.save(order);
 
         Order reloaded = orderRepository.findById(order.getId()).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(OrderStatus.RECEBIDO);
+        assertThat(reloaded.getCustomerName()).isEqualTo("Ana Souza");
         assertThat(reloaded.getTotalCents()).isEqualTo(9980L);
         assertThat(reloaded.getItems()).hasSize(1);
         assertThat(reloaded.getItems().get(0).getUnitPriceCents()).isEqualTo(4990L);
@@ -72,7 +73,7 @@ class PersistenceIntegrationTest extends AbstractIntegrationTest {
         User user = userRepository.save(User.register("Rodrigo",
                 "rodrigo-" + UUID.randomUUID() + "@example.com",
                 "$2a$10$abcdefghijklmnopqrstuvabcdefghijklmnopqrstuvabcdefghi"));
-        Order order = Order.place(user.getId(), List.of(new OrderItem("Pizza Calabresa", 4990L, 2),
+        Order order = Order.place(user.getId(), "Ana Souza", List.of(new OrderItem("Pizza Calabresa", 4990L, 2),
                         new OrderItem("Coca", 500L, 1)),
                 new Address("Rua das Flores", "100", null, "Centro", "São Paulo", "SP", "01001000"));
         orderRepository.save(order);
@@ -91,7 +92,7 @@ class PersistenceIntegrationTest extends AbstractIntegrationTest {
         User user = userRepository.save(User.register("Rodrigo",
                 "rodrigo-" + UUID.randomUUID() + "@example.com",
                 "$2a$10$abcdefghijklmnopqrstuvabcdefghijklmnopqrstuvabcdefghi"));
-        Order order = Order.place(user.getId(), List.of(new OrderItem("Pizza Calabresa", 4990L, 2)),
+        Order order = Order.place(user.getId(), "Ana Souza", List.of(new OrderItem("Pizza Calabresa", 4990L, 2)),
                 new Address("Rua das Flores", "100", null, "Centro", "São Paulo", "SP", "01001000"));
         orderRepository.save(order);
 
@@ -113,7 +114,7 @@ class PersistenceIntegrationTest extends AbstractIntegrationTest {
         User user = userRepository.save(User.register("Rodrigo",
                 "rodrigo-" + UUID.randomUUID() + "@example.com",
                 "$2a$10$abcdefghijklmnopqrstuvabcdefghijklmnopqrstuvabcdefghi"));
-        Order order = Order.place(user.getId(), List.of(new OrderItem("Pizza Calabresa", 4990L, 2)),
+        Order order = Order.place(user.getId(), "Ana Souza", List.of(new OrderItem("Pizza Calabresa", 4990L, 2)),
                 new Address("Rua das Flores", "100", null, "Centro", "São Paulo", "SP", "01001000"));
         orderRepository.save(order);
         long versionBefore = orderRepository.findById(order.getId()).orElseThrow().getVersion();

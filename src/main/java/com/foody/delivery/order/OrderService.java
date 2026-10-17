@@ -24,6 +24,7 @@ public class OrderService {
     public OrderResponse create(String userId, CreateOrderRequest request) {
         Order order = Order.place(
                 userId,
+                request.customerName(),
                 OrderMapper.toItems(request.items()),
                 OrderMapper.toAddress(request.deliveryAddress()));
         orderRepository.save(order);

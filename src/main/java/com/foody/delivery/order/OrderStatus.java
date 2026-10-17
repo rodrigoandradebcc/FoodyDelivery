@@ -15,7 +15,7 @@ public enum OrderStatus {
     static {
         RECEBIDO.allowedNext = Set.of(EM_PREPARO, CANCELADO);
         EM_PREPARO.allowedNext = Set.of(SAIU_PARA_ENTREGA, CANCELADO);
-        SAIU_PARA_ENTREGA.allowedNext = Set.of(ENTREGUE);
+        SAIU_PARA_ENTREGA.allowedNext = Set.of(ENTREGUE, CANCELADO);
     }
 
     public boolean canTransitionTo(OrderStatus next) {

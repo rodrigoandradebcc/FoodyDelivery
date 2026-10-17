@@ -51,7 +51,7 @@ class OrderServiceTest {
     }
 
     private static CreateOrderRequest requestWithTwoItems() {
-        return new CreateOrderRequest(
+        return new CreateOrderRequest("Ana Souza",
                 List.of(new OrderItemRequest("Pizza Calabresa", 4990L, 2),
                         new OrderItemRequest("Guaraná 2L", 1500L, 1)),
                 anyAddress());
@@ -81,7 +81,7 @@ class OrderServiceTest {
                 .map(RecordComponent::getName)
                 .toList();
 
-        assertThat(components).containsExactly("items", "deliveryAddress");
+        assertThat(components).containsExactly("customerName", "items", "deliveryAddress");
     }
 
     @Test
@@ -119,7 +119,7 @@ class OrderServiceTest {
     void nullComplementSurvivesBothDirections() {
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
         ArgumentCaptor<Order> saved = ArgumentCaptor.forClass(Order.class);
-        CreateOrderRequest request = new CreateOrderRequest(
+        CreateOrderRequest request = new CreateOrderRequest("Ana Souza",
                 List.of(new OrderItemRequest("Pizza Calabresa", 4990L, 2)),
                 new AddressDto("Rua das Flores", "100", null, "Centro",
                         "São Paulo", "SP", "01001000"));
@@ -133,7 +133,7 @@ class OrderServiceTest {
 
     @Test
     void validTransitionUpdatesStatus() {
-        Order order = Order.place("user-1",
+        Order order = Order.place("user-1", "Ana Souza",
                 List.of(new OrderItem("Pizza", 4990L, 1)), anyDomainAddress());
         when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -145,7 +145,7 @@ class OrderServiceTest {
 
     @Test
     void invalidTransitionThrowsConflictAndDoesNotSave() {
-        Order order = Order.place("user-1",
+        Order order = Order.place("user-1", "Ana Souza",
                 List.of(new OrderItem("Pizza", 4990L, 1)), anyDomainAddress());
         when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
 
@@ -172,7 +172,7 @@ class OrderServiceTest {
 
     @Test
     void getByIdReturnsTheMappedOrder() {
-        Order order = Order.place("user-1",
+        Order order = Order.place("user-1", "Ana Souza",
                 List.of(new OrderItem("Pizza", 4990L, 3)), anyDomainAddress());
         when(orderRepository.findById(order.getId())).thenReturn(Optional.of(order));
 
@@ -195,7 +195,7 @@ class OrderServiceTest {
 
     @Test
     void listWithoutStatusFiltersNothingAndCopiesPageMetadata() {
-        Order order = Order.place("user-1",
+        Order order = Order.place("user-1", "Ana Souza",
                 List.of(new OrderItem("Pizza", 4990L, 1)), anyDomainAddress());
         when(orderRepository.findAll(any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(order), PageRequest.of(1, 2), 5));
@@ -213,7 +213,7 @@ class OrderServiceTest {
 
     @Test
     void listWithStatusDelegatesToFindByStatusSortedByNewestFirst() {
-        Order order = Order.place("user-1",
+        Order order = Order.place("user-1", "Ana Souza",
                 List.of(new OrderItem("Pizza", 4990L, 1)), anyDomainAddress());
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
         when(orderRepository.findByStatus(eq(OrderStatus.RECEBIDO), any(Pageable.class)))
