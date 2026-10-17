@@ -4,17 +4,18 @@ import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
 import java.time.Instant;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
-/**
- * SQLite has no native TIMESTAMP type. Persist every Instant as an ISO-8601
- * string (TEXT column) so values are human-readable and sort chronologically.
- */
 @Converter(autoApply = true)
 public class InstantStringConverter implements AttributeConverter<Instant, String> {
 
+    static final DateTimeFormatter FIXED_PRECISION =
+            new DateTimeFormatterBuilder().appendInstant(9).toFormatter();
+
     @Override
     public String convertToDatabaseColumn(Instant attribute) {
-        return attribute == null ? null : attribute.toString();
+        return attribute == null ? null : FIXED_PRECISION.format(attribute);
     }
 
     @Override

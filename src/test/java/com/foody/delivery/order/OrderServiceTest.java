@@ -251,4 +251,21 @@ class OrderServiceTest {
                 .satisfies(order2 -> assertThat(order2.getDirection()).isEqualTo(Sort.Direction.DESC));
         verify(orderRepository, never()).findAll(any(Pageable.class));
     }
+
+    @Test
+    void listBreaksCreatedAtTiesByIdSoPageBoundariesAreStable() {
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        when(orderRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 20), 0));
+
+        orderService.list(null, 0, 20);
+
+        verify(orderRepository).findAll(pageable.capture());
+        List<Sort.Order> orders = pageable.getValue().getSort().toList();
+        assertThat(orders).hasSize(2);
+        assertThat(orders.get(0).getProperty()).isEqualTo("createdAt");
+        assertThat(orders.get(0).getDirection()).isEqualTo(Sort.Direction.DESC);
+        assertThat(orders.get(1).getProperty()).isEqualTo("id");
+        assertThat(orders.get(1).getDirection()).isEqualTo(Sort.Direction.DESC);
+    }
 }

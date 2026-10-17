@@ -39,7 +39,8 @@ public class OrderService {
     @Transactional(readOnly = true)
     public PageResponse<OrderResponse> list(OrderStatus status, int page, int size) {
         // ISO-8601 text sorts chronologically, so ordering by created_at works on SQLite.
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Pageable pageable = PageRequest.of(page, size,
+                Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
         Page<Order> orders = status == null
                 ? orderRepository.findAll(pageable)
                 : orderRepository.findByStatus(status, pageable);
