@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -95,6 +96,12 @@ public class ApiExceptionHandler {
                                              HttpServletRequest request) {
         return problem(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media type",
                 "Content-Type must be application/json", request);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    ProblemDetail handleNotAcceptable(HttpMediaTypeNotAcceptableException ex, HttpServletRequest request) {
+        return problem(HttpStatus.NOT_ACCEPTABLE, "Not acceptable",
+                "Responses are only available as application/json", request);
     }
 
     private ProblemDetail validationProblem(List<Map<String, String>> errors, HttpServletRequest request) {

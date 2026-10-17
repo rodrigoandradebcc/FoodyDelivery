@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import org.hibernate.annotations.OptimisticLock;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ public class Order {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     @JoinColumn(name = "order_id", nullable = false)
+    @OptimisticLock(excluded = true)
     private List<OrderItem> items = new ArrayList<>();
 
     @Column(name = "created_at", nullable = false)

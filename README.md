@@ -161,7 +161,8 @@ O `email` não diferencia maiúsculas de minúsculas: é gravado e comparado em 
 cadastro e no login, e é assim que ele volta na resposta — `Rodrigo@Example.com` e
 `rodrigo@example.com` são a mesma conta.
 
-Limites por item do pedido: `quantity` entre `1` e `1000`, `unitPriceCents` entre `0` e
+Um pedido tem de `1` a `100` itens (`items` vazio ou com mais de `100` devolve `400` apontando
+`items`). Limites por item do pedido: `quantity` entre `1` e `1000`, `unitPriceCents` entre `0` e
 `100000000` (R$ 1.000.000,00). Número fracionário num campo inteiro (`"quantity": 2.5`),
 texto num campo numérico ou um valor desconhecido de `status` devolvem `400` com o campo
 apontado em `errors` — nunca são truncados nem aceitos.
@@ -170,8 +171,9 @@ Erros seguem **RFC 7807 (`application/problem+json`)**: `400` validação (com a
 `errors`, um objeto por campo inválido — inclusive tipo errado ou enum desconhecido no
 corpo e parâmetros de query inválidos), `401` credenciais inválidas, `404` pedido ou rota
 inexistente, `405` método não suportado (com `Allow`), `409` transição de status inválida,
-e-mail já cadastrado ou modificação concorrente do mesmo pedido, `415` corpo sem
-`Content-Type: application/json`.
+e-mail já cadastrado ou modificação concorrente do mesmo pedido, `406` `Accept` que não
+aceita JSON (ex.: `text/plain`; o corpo ainda vem como `application/problem+json`), `415`
+corpo sem `Content-Type: application/json`.
 
 ---
 

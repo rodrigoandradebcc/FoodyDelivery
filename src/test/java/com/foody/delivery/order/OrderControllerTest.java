@@ -271,6 +271,18 @@ class OrderControllerTest {
     }
 
     @Test
+    void unacceptableAcceptHeaderIs406ProblemDetail() throws Exception {
+        when(orderService.getById("order-1")).thenReturn(response("RECEBIDO"));
+
+        mockMvc.perform(get("/api/v1/orders/order-1").with(jwt()).accept(MediaType.TEXT_PLAIN))
+                .andExpect(status().isNotAcceptable())
+                .andExpect(header().string("Content-Type", MediaType.APPLICATION_PROBLEM_JSON_VALUE))
+                .andExpect(jsonPath("$.title").value("Not acceptable"))
+                .andExpect(jsonPath("$.detail").value("Responses are only available as application/json"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders/order-1"));
+    }
+
+    @Test
     void unknownPathIs404ProblemDetail() throws Exception {
         mockMvc.perform(get("/api/v1/orders/order-1/items").with(jwt()))
                 .andExpect(status().isNotFound())

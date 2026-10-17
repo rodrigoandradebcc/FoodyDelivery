@@ -67,6 +67,20 @@ class CreateOrderRequestValidationTest {
     }
 
     @Test
+    void oneHundredItemsAreAccepted() {
+        CreateOrderRequest request = new CreateOrderRequest(Collections.nCopies(100, validItem()), validAddress());
+
+        assertThat(pathsOf(request)).isEmpty();
+    }
+
+    @Test
+    void moreThanOneHundredItemsAreRejected() {
+        CreateOrderRequest request = new CreateOrderRequest(Collections.nCopies(101, validItem()), validAddress());
+
+        assertThat(pathsOf(request)).containsExactly("items");
+    }
+
+    @Test
     void nullItemsListIsRejected() {
         CreateOrderRequest request = new CreateOrderRequest(null, validAddress());
 

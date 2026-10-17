@@ -68,6 +68,25 @@ class PersistenceIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void aFreshlySavedOrderStartsAtVersionZeroAndAStatusChangeBumpsIt() {
+        User user = userRepository.save(User.register("Rodrigo",
+                "rodrigo-" + UUID.randomUUID() + "@example.com",
+                "$2a$10$abcdefghijklmnopqrstuvabcdefghijklmnopqrstuvabcdefghi"));
+        Order order = Order.place(user.getId(), List.of(new OrderItem("Pizza Calabresa", 4990L, 2),
+                        new OrderItem("Coca", 500L, 1)),
+                new Address("Rua das Flores", "100", null, "Centro", "São Paulo", "SP", "01001000"));
+        orderRepository.save(order);
+
+        Order saved = orderRepository.findById(order.getId()).orElseThrow();
+        assertThat(saved.getVersion()).isZero();
+
+        saved.changeStatus(OrderStatus.EM_PREPARO);
+        orderRepository.save(saved);
+
+        assertThat(orderRepository.findById(order.getId()).orElseThrow().getVersion()).isEqualTo(1L);
+    }
+
+    @Test
     void staleUpdateIsRejectedAndTheFirstWriteWins() {
         User user = userRepository.save(User.register("Rodrigo",
                 "rodrigo-" + UUID.randomUUID() + "@example.com",
