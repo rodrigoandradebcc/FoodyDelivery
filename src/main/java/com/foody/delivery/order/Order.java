@@ -12,6 +12,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -48,6 +49,10 @@ public class Order {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+
+    @Version
+    @Column(nullable = false)
+    private long version;
 
     protected Order() {
         // JPA
@@ -114,5 +119,9 @@ public class Order {
 
     public Instant getUpdatedAt() {
         return updatedAt;
+    }
+
+    public long getVersion() {
+        return version;
     }
 }

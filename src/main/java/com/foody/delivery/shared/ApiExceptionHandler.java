@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -43,6 +44,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ConflictException.class)
     ProblemDetail handleConflict(ConflictException ex, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, ex.getTitle(), ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    ProblemDetail handleOptimisticLock(ObjectOptimisticLockingFailureException ex, HttpServletRequest request) {
+        return problem(HttpStatus.CONFLICT, "Concurrent modification",
+                "The resource was modified by another request; reload it and retry", request);
     }
 
     @ExceptionHandler(UnauthorizedException.class)

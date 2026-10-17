@@ -5,6 +5,7 @@ import com.foody.delivery.user.User;
 import com.foody.delivery.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Proves that: Flyway migrations run on a fresh SQLite file, Hibernate
@@ -55,5 +57,27 @@ class PersistenceIntegrationTest extends AbstractIntegrationTest {
         assertThat(reloaded.getDeliveryAddress().getCity()).isEqualTo("São Paulo");
         assertThat(reloaded.getCreatedAt()).isEqualTo(order.getCreatedAt());
         assertThat(reloaded.getId()).hasSize(36);
+    }
+
+    @Test
+    void staleUpdateIsRejectedAndTheFirstWriteWins() {
+        User user = userRepository.save(User.register("Rodrigo",
+                "rodrigo-" + UUID.randomUUID() + "@example.com",
+                "$2a$10$abcdefghijklmnopqrstuvabcdefghijklmnopqrstuvabcdefghi"));
+        Order order = Order.place(user.getId(), List.of(new OrderItem("Pizza Calabresa", 4990L, 2)),
+                new Address("Rua das Flores", "100", null, "Centro", "São Paulo", "SP", "01001000"));
+        orderRepository.save(order);
+
+        Order first = orderRepository.findById(order.getId()).orElseThrow();
+        Order second = orderRepository.findById(order.getId()).orElseThrow();
+        first.changeStatus(OrderStatus.EM_PREPARO);
+        orderRepository.save(first);
+        second.changeStatus(OrderStatus.CANCELADO);
+
+        assertThatThrownBy(() -> orderRepository.save(second))
+                .isInstanceOf(ObjectOptimisticLockingFailureException.class);
+        Order reloaded = orderRepository.findById(order.getId()).orElseThrow();
+        assertThat(reloaded.getStatus()).isEqualTo(OrderStatus.EM_PREPARO);
+        assertThat(reloaded.getVersion()).isGreaterThan(first.getVersion());
     }
 }
