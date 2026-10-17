@@ -1,6 +1,6 @@
 const PRICE_RE = /^(?:\d+|\d{1,3}(?:\.\d{3})+)(?:,\d{1,2})?$/;
 const QUANTITY_RE = /^\d+$/;
-const ITEM_PATH_RE = /^items\[(\d+)]\.(productName|name|quantity|unitPriceCents)$/;
+const ITEM_PATH_RE = /^items\[(\d+)]\.(productName|quantity|unitPriceCents)$/;
 
 const ADDRESS_FIELDS = [
   "street", "number", "complement", "district", "city", "state", "zipCode",
@@ -60,13 +60,12 @@ export function toFormErrorTarget(field: string): ErrorTarget | null {
 
   const item = ITEM_PATH_RE.exec(field);
   if (item) {
-    const name = item[2] === "unitPriceCents" ? "price" : item[2] === "name" ? "productName" : item[2];
+    const name = item[2] === "unitPriceCents" ? "price" : item[2];
     return `items.${Number(item[1])}.${name}` as ErrorTarget;
   }
 
   if (field.startsWith("deliveryAddress.")) {
     const name = field.slice("deliveryAddress.".length);
-    if (name === "neighborhood") return "deliveryAddress.district";
     if (ADDRESS_FIELDS.some((part) => part === name)) {
       return field as ErrorTarget;
     }

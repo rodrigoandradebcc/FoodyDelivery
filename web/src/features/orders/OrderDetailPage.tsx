@@ -6,23 +6,17 @@ import { getOrder } from "../../api/orders";
 import { maskCep } from "../../lib/cep";
 import { formatCentsBRL } from "../../lib/money";
 import { formatLocalDateTime } from "../../lib/time";
-import { ADVANCE_LABEL, CAN_CANCEL, NEXT_STATUS, STATUS_META } from "./statusMeta";
-import { useStatusMutation } from "./useOrders";
+import { STATUS_META } from "./statusMeta";
+import { StatusActions } from "./StatusActions";
 import "./orderdetail.css";
 
 export default function OrderDetailPage() {
   const { id } = useParams();
-  const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [mutationError, setMutationError] = useState<string | null>(null);
   const query = useQuery({
     queryKey: ["orders", "detail", id],
     queryFn: () => getOrder(id ?? ""),
     enabled: Boolean(id),
-  });
-  const mutation = useStatusMutation((error) => {
-    setMutationError(
-      error.status === 409 ? "Transição inválida — o pedido foi atualizado." : error.message,
-    );
   });
   const order = query.data;
 
@@ -49,20 +43,7 @@ export default function OrderDetailPage() {
   }
 
   const meta = STATUS_META[order.status];
-  const next = NEXT_STATUS[order.status];
-  const advanceLabel = ADVANCE_LABEL[order.status];
-  const canCancel = CAN_CANCEL[order.status];
   const address = order.deliveryAddress;
-  const busy = mutation.isPending;
-  const orderId = order.id;
-
-  function changeStatus(status: "CANCELADO" | NonNullable<typeof next>) {
-    setMutationError(null);
-    mutation.mutate(
-      { id: orderId, status },
-      { onSettled: () => setConfirmingCancel(false) },
-    );
-  }
 
   return (
     <div className="order-detail">
@@ -112,23 +93,13 @@ export default function OrderDetailPage() {
           <div><dt>Atualizado em</dt><dd><time dateTime={order.updatedAt}>{formatLocalDateTime(order.updatedAt)}</time></dd></div>
         </dl>
         {mutationError && <p className="detail-error" role="alert">{mutationError}</p>}
-        {(next || canCancel) && (
-          <div className="detail-actions">
-            {confirmingCancel ? (
-              <>
-                <button type="button" className="btn btn-ghost" disabled={busy} onClick={() => setConfirmingCancel(false)}>Voltar</button>
-                <button type="button" className="btn btn-primary order-cancel-confirm" disabled={busy} onClick={() => changeStatus("CANCELADO")}>
-                  {busy ? "Cancelando…" : "Confirmar cancelamento"}
-                </button>
-              </>
-            ) : (
-              <>
-                {canCancel && <button type="button" className="btn btn-danger-ghost" disabled={busy} onClick={() => setConfirmingCancel(true)}>Cancelar</button>}
-                {next && advanceLabel && <button type="button" className="btn btn-primary" disabled={busy} onClick={() => changeStatus(next)}>{busy ? "Salvando…" : advanceLabel}</button>}
-              </>
-            )}
-          </div>
-        )}
+        <StatusActions
+          order={order}
+          onChangeStart={() => setMutationError(null)}
+          onError={(error) => setMutationError(
+            error.status === 409 ? "Transição inválida — o pedido foi atualizado." : error.message,
+          )}
+        />
       </section>
     </div>
   );

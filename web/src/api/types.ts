@@ -47,7 +47,6 @@ export interface LoginRequest {
 export interface LoginResponse {
   accessToken: string;
   tokenType: "Bearer";
-
   expiresIn: number;
 }
 
@@ -63,9 +62,7 @@ export interface DeliveryAddress {
   complement: string | null;
   district: string;
   city: string;
-
   state: string;
-
   zipCode: string;
 }
 

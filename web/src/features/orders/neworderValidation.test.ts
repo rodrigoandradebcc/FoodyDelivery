@@ -60,17 +60,18 @@ describe("server field mapping", () => {
     expect(toFormErrorTarget("items")).toBe("items.root");
     expect(toFormErrorTarget("items[2].unitPriceCents")).toBe("items.2.price");
     expect(toFormErrorTarget("items[0].productName")).toBe("items.0.productName");
-    expect(toFormErrorTarget("items[0].name")).toBe("items.0.productName");
     expect(toFormErrorTarget("items[1].quantity")).toBe("items.1.quantity");
     expect(toFormErrorTarget("deliveryAddress")).toBe("deliveryAddress.root");
     expect(toFormErrorTarget("deliveryAddress.zipCode")).toBe("deliveryAddress.zipCode");
     expect(toFormErrorTarget("deliveryAddress.complement")).toBe("deliveryAddress.complement");
-    expect(toFormErrorTarget("deliveryAddress.neighborhood")).toBe("deliveryAddress.district");
+    expect(toFormErrorTarget("deliveryAddress.district")).toBe("deliveryAddress.district");
   });
 
   it("uses form-level fallback only for unknown paths", () => {
     expect(toFormErrorTarget("items[0].unknown")).toBeNull();
+    expect(toFormErrorTarget("items[0].name")).toBeNull();
     expect(toFormErrorTarget("deliveryAddress.unknown")).toBeNull();
+    expect(toFormErrorTarget("deliveryAddress.neighborhood")).toBeNull();
     expect(toFormErrorTarget("status")).toBeNull();
   });
 });
