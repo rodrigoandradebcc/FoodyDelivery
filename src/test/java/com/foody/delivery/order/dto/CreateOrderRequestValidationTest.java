@@ -167,6 +167,28 @@ class CreateOrderRequestValidationTest {
     }
 
     @Test
+    void unitPriceAboveOneMillionReaisIsRejected() {
+        assertThat(pathsOf(requestWith(new OrderItemRequest("Pizza", 100_000_001L, 1))))
+                .containsExactly("items[0].unitPriceCents");
+    }
+
+    @Test
+    void unitPriceOfExactlyOneMillionReaisIsAccepted() {
+        assertThat(pathsOf(requestWith(new OrderItemRequest("Pizza", 100_000_000L, 1)))).isEmpty();
+    }
+
+    @Test
+    void quantityAboveOneThousandIsRejected() {
+        assertThat(pathsOf(requestWith(new OrderItemRequest("Pizza", 4990L, 1001))))
+                .containsExactly("items[0].quantity");
+    }
+
+    @Test
+    void quantityOfExactlyOneThousandIsAccepted() {
+        assertThat(pathsOf(requestWith(new OrderItemRequest("Pizza", 4990L, 1000)))).isEmpty();
+    }
+
+    @Test
     void blankProductNameIsRejected() {
         assertThat(pathsOf(requestWith(new OrderItemRequest("   ", 4990L, 2))))
                 .containsExactly("items[0].productName");

@@ -67,7 +67,7 @@ public class Order {
         order.status = OrderStatus.RECEBIDO;
         order.items = new ArrayList<>(items);
         order.deliveryAddress = deliveryAddress;
-        order.totalCents = items.stream().mapToLong(OrderItem::subtotalCents).sum();
+        order.totalCents = items.stream().mapToLong(OrderItem::subtotalCents).reduce(0L, Math::addExact);
         Instant now = Instant.now();
         order.createdAt = now;
         order.updatedAt = now;

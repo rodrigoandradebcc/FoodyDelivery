@@ -538,4 +538,17 @@ class OrderFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.title").value("Validation failed"))
                 .andExpect(jsonPath("$.errors[*].field", hasItem("items[0].unitPriceCents")));
     }
+
+    @Test
+    void hugePriceReturns400InsteadOfANegativeTotal() throws Exception {
+        String token = authToken();
+        mockMvc.perform(post("/api/v1/orders")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_ORDER_JSON.replace("\"unitPriceCents\": 4990",
+                                "\"unitPriceCents\": 9223372036854775807")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[*].field", hasItem("items[0].unitPriceCents")));
+    }
 }

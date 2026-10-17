@@ -52,6 +52,6 @@ public class OrderItem {
     }
 
     public long subtotalCents() {
-        return unitPriceCents * quantity;
+        return Math.multiplyExact(unitPriceCents, quantity);
     }
 }
