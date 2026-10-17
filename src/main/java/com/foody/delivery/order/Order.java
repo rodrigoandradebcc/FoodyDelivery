@@ -55,13 +55,8 @@ public class Order {
     private long version;
 
     protected Order() {
-        // JPA
     }
 
-    /**
-     * Orders are born RECEBIDO and the total is ALWAYS computed here,
-     * on the server, from the items. Never accepted from the client.
-     */
     public static Order place(String userId, List<OrderItem> items, Address deliveryAddress) {
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("Order requires at least one item");
@@ -79,7 +74,6 @@ public class Order {
         return order;
     }
 
-    /** Transition rule enforced in the domain; invalid transition -> 409. */
     public void changeStatus(OrderStatus next) {
         if (!status.canTransitionTo(next)) {
             throw new ConflictException("Invalid status transition",

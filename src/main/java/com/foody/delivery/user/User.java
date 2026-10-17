@@ -29,7 +29,6 @@ public class User {
     private Instant createdAt;
 
     protected User() {
-        // JPA
     }
 
     public static User register(String name, String email, String passwordHash) {

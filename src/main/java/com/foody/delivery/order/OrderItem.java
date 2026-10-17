@@ -25,7 +25,6 @@ public class OrderItem {
     private int quantity;
 
     protected OrderItem() {
-        // JPA
     }
 
     public OrderItem(String productName, long unitPriceCents, int quantity) {

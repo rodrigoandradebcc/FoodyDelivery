@@ -28,7 +28,6 @@ public class Address {
     private String zipCode;
 
     protected Address() {
-        // JPA
     }
 
     public Address(String street, String number, String complement, String district,

@@ -22,7 +22,6 @@ public class OrderService {
 
     @Transactional
     public OrderResponse create(String userId, CreateOrderRequest request) {
-        // The total is never read from the request: Order.place computes it from the items.
         Order order = Order.place(
                 userId,
                 OrderMapper.toItems(request.items()),
@@ -38,7 +37,6 @@ public class OrderService {
 
     @Transactional(readOnly = true)
     public PageResponse<OrderResponse> list(OrderStatus status, int page, int size) {
-        // ISO-8601 text sorts chronologically, so ordering by created_at works on SQLite.
         Pageable pageable = PageRequest.of(page, size,
                 Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id")));
         Page<Order> orders = status == null
@@ -55,7 +53,6 @@ public class OrderService {
     @Transactional
     public OrderResponse updateStatus(String id, OrderStatus newStatus) {
         Order order = findOrder(id);
-        // The state machine lives in the domain; the service only delegates to it.
         order.changeStatus(newStatus);
         orderRepository.save(order);
         return OrderMapper.toResponse(order);

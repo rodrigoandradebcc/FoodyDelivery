@@ -25,11 +25,6 @@ import java.util.concurrent.TimeUnit;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/**
- * Proves that: Flyway migrations run on a fresh SQLite file, Hibernate
- * ddl-auto=validate accepts the schema, and entities round-trip
- * (UUID text ids, Instant as ISO-8601 text, money as long cents).
- */
 class PersistenceIntegrationTest extends AbstractIntegrationTest {
 
     static final String JDBC_URL = newTempSqliteUrl();

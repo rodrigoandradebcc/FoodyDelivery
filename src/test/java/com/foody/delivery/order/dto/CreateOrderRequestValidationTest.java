@@ -15,13 +15,6 @@ import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-/**
- * These are the tests for the guarantees nothing else in the stack provides:
- * the migration has no CHECK constraints and {@code OrderItem}'s constructor has no
- * guards, so bean validation on the request DTO is the ONLY thing keeping a
- * zero-quantity or negative-price item out of the database. Each test therefore
- * pins the exact property path the client will see in the {@code errors} extension.
- */
 class CreateOrderRequestValidationTest {
 
     private static ValidatorFactory factory;
@@ -66,13 +59,6 @@ class CreateOrderRequestValidationTest {
         assertThat(violations).isEmpty();
     }
 
-    // --- items list itself -------------------------------------------------
-
-    /**
-     * Order.place throws IllegalArgumentException on an empty list and
-     * ApiExceptionHandler deliberately does not handle it, so without @NotEmpty an
-     * empty items array would surface as a 500. This is what makes it a 400.
-     */
     @Test
     void emptyItemsListIsRejected() {
         CreateOrderRequest request = new CreateOrderRequest(List.of(), validAddress());
@@ -87,7 +73,6 @@ class CreateOrderRequestValidationTest {
         assertThat(pathsOf(request)).containsExactly("items");
     }
 
-    /** A JSON {@code [null]} element is not a cascade target, so it needs its own guard. */
     @Test
     void nullItemElementIsRejected() {
         CreateOrderRequest request =
@@ -96,12 +81,6 @@ class CreateOrderRequestValidationTest {
         assertThat(pathsOf(request)).containsExactly("items[0].<list element>");
     }
 
-    // --- @Valid actually cascades into the nested item list ----------------
-
-    /**
-     * If @Valid did not cascade into the list, every per-item constraint below would
-     * silently pass and this set would be empty.
-     */
     @Test
     void perItemConstraintsRunBecauseValidCascadesIntoTheList() {
         CreateOrderRequest request = requestWith(new OrderItemRequest("  ", -1L, 0));
@@ -117,8 +96,6 @@ class CreateOrderRequestValidationTest {
         assertThat(pathsOf(request)).containsExactly("items[1].quantity");
     }
 
-    // --- quantity >= 1 ------------------------------------------------------
-
     @Test
     void zeroQuantityIsRejected() {
         assertThat(pathsOf(requestWith(new OrderItemRequest("Pizza", 4990L, 0))))
@@ -131,7 +108,6 @@ class CreateOrderRequestValidationTest {
                 .containsExactly("items[0].quantity");
     }
 
-    /** The boundary the constraint is supposed to allow: exactly one unit. */
     @Test
     void quantityOfOneIsAccepted() {
         assertThat(pathsOf(requestWith(new OrderItemRequest("Pizza", 4990L, 1)))).isEmpty();
@@ -143,18 +119,12 @@ class CreateOrderRequestValidationTest {
                 .containsExactly("items[0].quantity");
     }
 
-    // --- unitPriceCents >= 0 ------------------------------------------------
-
     @Test
     void negativeUnitPriceIsRejected() {
         assertThat(pathsOf(requestWith(new OrderItemRequest("Pizza", -1L, 2))))
                 .containsExactly("items[0].unitPriceCents");
     }
 
-    /**
-     * The spec says {@code unit_price_cents >= 0}, not {@code > 0}: a free item is
-     * legal. This pins that the constraint is @Min(0) and never drifts to @Min(1).
-     */
     @Test
     void zeroUnitPriceIsAccepted() {
         assertThat(pathsOf(requestWith(new OrderItemRequest("Brinde", 0L, 1)))).isEmpty();
@@ -205,8 +175,6 @@ class CreateOrderRequestValidationTest {
         assertThat(pathsOf(requestWith(new OrderItemRequest("x".repeat(150), 4990L, 2)))).isEmpty();
     }
 
-    // --- delivery address ---------------------------------------------------
-
     @Test
     void nullDeliveryAddressIsRejected() {
         CreateOrderRequest request = new CreateOrderRequest(List.of(validItem()), null);
@@ -233,11 +201,6 @@ class CreateOrderRequestValidationTest {
         assertThat(pathsOf(tooShort)).containsExactly("deliveryAddress.state");
     }
 
-    /**
-     * Both sides, like stateMustBeExactlyTwoCharacters: testing only the 9-character
-     * formatted CEP would still pass if the constraint lost its min and became
-     * {@code @Size(max = 8)}.
-     */
     @Test
     void zipCodeMustBeExactlyEightCharacters() {
         CreateOrderRequest withDash = new CreateOrderRequest(List.of(validItem()),
@@ -249,8 +212,6 @@ class CreateOrderRequestValidationTest {
         assertThat(pathsOf(tooShort)).containsExactly("deliveryAddress.zipCode");
     }
 
-    /** complement is the one nullable address field; the valid-request test above
-     * already sends it as null, this pins that an empty string is fine too. */
     @Test
     void complementIsOptional() {
         CreateOrderRequest request = new CreateOrderRequest(List.of(validItem()),

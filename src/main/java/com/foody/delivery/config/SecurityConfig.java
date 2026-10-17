@@ -22,7 +22,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Stateless token API: no session cookie, so CSRF protection is not applicable.
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session ->
@@ -40,9 +39,6 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        // Dev-only browser clients (Vite dev server and `vite preview`).
-        // Bearer tokens travel in the Authorization header, never in cookies,
-        // so allowCredentials stays false — and origins are still explicit, not "*".
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(List.of(
                 "http://localhost:5173",

@@ -20,11 +20,6 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.UUID;
 
-/**
- * RSA keypair generated in memory at boot. No key material is ever committed.
- * Documented consequence (README): restarting the application invalidates
- * every previously issued token.
- */
 @Configuration
 public class JwtKeyConfig {
 

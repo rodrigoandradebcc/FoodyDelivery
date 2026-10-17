@@ -40,14 +40,6 @@ class OrderServiceTest {
     @InjectMocks
     private OrderService orderService;
 
-    /**
-     * Both address mappings are 7 positional String arguments, so a street/district or
-     * city/district transposition is invisible to the compiler and can only be caught by
-     * asserting every component. The seven values below are deliberately PAIRWISE
-     * DISTINCT -- if any two matched, a swap between exactly those two would still pass.
-     * complement is non-null here so it takes part in that guarantee;
-     * {@link #nullComplementSurvivesBothDirections()} covers the nullable case separately.
-     */
     private static AddressDto anyAddress() {
         return new AddressDto("Rua das Flores", "100", "Apto 42", "Centro",
                 "São Paulo", "SP", "01001000");
@@ -83,11 +75,6 @@ class OrderServiceTest {
         assertThat(response.status()).isEqualTo("RECEBIDO");
     }
 
-    /**
-     * The strongest guarantee that a client cannot influence the stored total is
-     * structural: there is no field to send it in. If someone ever adds one to the
-     * request record, this fails and forces the decision to be made again on purpose.
-     */
     @Test
     void createOrderRequestHasNoClientSuppliedTotalField() {
         List<String> components = Arrays.stream(CreateOrderRequest.class.getRecordComponents())
@@ -110,12 +97,6 @@ class OrderServiceTest {
         assertThat(saved.getValue().getItems()).hasSize(2);
     }
 
-    /**
-     * The REQUEST direction, OrderMapper.toAddress: DTO -> domain. Asserted against the
-     * domain object rather than by round-tripping back to a DTO, because a transposition
-     * present in BOTH toAddress and toResponse would cancel out in a round trip and leave
-     * the wrong values in the database.
-     */
     @Test
     void createMapsEveryAddressComponentIntoTheDomain() {
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -134,7 +115,6 @@ class OrderServiceTest {
         assertThat(address.getZipCode()).isEqualTo("01001000");
     }
 
-    /** complement is the one nullable address component; it must stay null both ways. */
     @Test
     void nullComplementSurvivesBothDirections() {
         when(orderRepository.save(any(Order.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -203,9 +183,6 @@ class OrderServiceTest {
         assertThat(response.items()).singleElement()
                 .satisfies(item -> assertThat(item.productName()).isEqualTo("Pizza"));
 
-        // The RESPONSE direction, OrderMapper.toResponse: domain -> DTO. All seven
-        // components asserted; the address is built from 7 positional Strings, so a
-        // transposition between any two of them is otherwise silent.
         AddressDto address = response.deliveryAddress();
         assertThat(address.street()).isEqualTo("Rua das Flores");
         assertThat(address.number()).isEqualTo("100");

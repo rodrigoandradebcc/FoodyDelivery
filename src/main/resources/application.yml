@@ -7,7 +7,7 @@ spring:
   jpa:
     database-platform: org.hibernate.community.dialect.SQLiteDialect
     hibernate:
-      ddl-auto: validate     # schema comes from Flyway
+      ddl-auto: validate
     open-in-view: false
   jackson:
     deserialization:

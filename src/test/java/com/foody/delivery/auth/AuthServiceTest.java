@@ -31,21 +31,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * The concurrent half of duplicate registration, covered without a real race.
- *
- * <p>A test that actually spawned two threads racing on the same e-mail would be flaky and would
- * prove nothing repeatable: the losing INSERT only fails if the two transactions interleave, and
- * on a single-writer SQLite file they usually will not. What is worth pinning is narrower and
- * fully deterministic — that IF the unique constraint fires, {@code register} answers with the
- * same {@code ConflictException} the pre-check raises, not with the raw
- * {@code DataIntegrityViolationException} that {@code ApiExceptionHandler} (deliberately
- * catch-all-free) would let escape as an HTTP 500. Mocking the repository is what lets the
- * violation be injected on demand instead of waited for.
- *
- * <p>The sequential path is covered end-to-end by
- * {@code AuthFlowIntegrationTest.duplicateEmailReturns409ProblemDetail}.
- */
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
@@ -74,8 +59,6 @@ class AuthServiceTest {
 
     @Test
     void uniqueConstraintViolationBecomesTheSameConflictAsThePreCheck() {
-        // The pre-check passes: this is the racing case, where the duplicate appeared between
-        // the existsByEmail and the INSERT.
         when(userRepository.existsByEmail(REQUEST.email())).thenReturn(false);
         when(passwordEncoder.encode(REQUEST.password())).thenReturn("$2a$10$irrelevant");
         when(userRepository.saveAndFlush(any(User.class))).thenThrow(uniqueEmailViolation());
@@ -87,11 +70,6 @@ class AuthServiceTest {
                         .isEqualTo("E-mail already registered"));
     }
 
-    /**
-     * Pins that the two paths are indistinguishable to a client: same exception type, same title,
-     * same detail. If either message ever drifts, the racing caller would get a different 409
-     * body than the sequential one for the same cause.
-     */
     @Test
     void racingAndSequentialDuplicatesProduceIdenticalConflicts() {
         when(userRepository.existsByEmail(REQUEST.email())).thenReturn(true);
@@ -109,13 +87,6 @@ class AuthServiceTest {
         assertThat(racing.getMessage()).isEqualTo(sequential.getMessage());
     }
 
-    /**
-     * {@code save} would only queue the INSERT in the persistence context and issue it at commit,
-     * i.e. after {@code register} has returned and outside its try block — the catch above would
-     * then never see the violation and the 500 would be back, with every test still green because
-     * no test can observe a flush that never happens. This verifies the flushing variant is the
-     * one called.
-     */
     @Test
     void registerFlushesSoTheConstraintViolationSurfacesInsideTheTryBlock() {
         when(userRepository.existsByEmail(REQUEST.email())).thenReturn(false);

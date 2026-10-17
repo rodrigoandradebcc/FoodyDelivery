@@ -6,22 +6,6 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
 
-/**
- * Base for all integration tests. Each concrete test class MUST declare its own
- * temp-FILE SQLite database (one per test class, per the spec — NEVER :memory:,
- * because each pooled connection would open its own empty database):
- *
- * <pre>
- *   static final String JDBC_URL = newTempSqliteUrl();
- *
- *   &#64;DynamicPropertySource
- *   static void datasource(DynamicPropertyRegistry registry) {
- *       registry.add("spring.datasource.url", () -&gt; JDBC_URL);
- *   }
- * </pre>
- *
- * Flyway runs against that file exactly as it does in production.
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 public abstract class AbstractIntegrationTest {

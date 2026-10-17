@@ -42,13 +42,6 @@ class SecurityIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isUnauthorized());
     }
 
-    /**
-     * Proves the boot-generated {@code JwtDecoder} bean is the one the resource-server
-     * filter uses: a token signed by our own {@code JwtEncoder} passes authentication and
-     * reaches the dispatcher, which 404s because no handler is mapped to this probe path.
-     * The path is deliberately one no controller will ever map, so this stays true
-     * after later tasks add real endpoints.
-     */
     @Test
     void selfIssuedTokenAuthenticatesAndReachesTheDispatcher() throws Exception {
         Instant now = Instant.now();
