@@ -56,7 +56,7 @@ class OrderMapperTest {
 
     @Test
     void toResponseCopiesIdStatusTotalItemsAddressAndTimestamps() {
-        Order order = Order.place("user-1",
+        Order order = Order.place("user-1", "Ana Souza",
                 List.of(new OrderItem("Pizza Calabresa", 4990L, 2), new OrderItem("Guaraná 2L", 1500L, 1)),
                 OrderMapper.toAddress(ADDRESS_DTO));
 

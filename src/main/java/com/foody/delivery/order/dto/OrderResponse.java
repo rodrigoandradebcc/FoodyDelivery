@@ -5,6 +5,7 @@ import java.util.List;
 
 public record OrderResponse(
         String id,
+        String customerName,
         String status,
         long totalCents,
         List<OrderItemResponse> items,

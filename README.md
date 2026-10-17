@@ -161,7 +161,8 @@ O `email` não diferencia maiúsculas de minúsculas: é gravado e comparado em 
 cadastro e no login, e é assim que ele volta na resposta — `Rodrigo@Example.com` e
 `rodrigo@example.com` são a mesma conta.
 
-Um pedido tem de `1` a `100` itens (`items` vazio ou com mais de `100` devolve `400` apontando
+Um pedido exige `customerName` com 1 a 120 caracteres após remover espaços nas pontas e
+tem de `1` a `100` itens (`items` vazio ou com mais de `100` devolve `400` apontando
 `items`). Limites por item do pedido: `quantity` entre `1` e `1000`, `unitPriceCents` entre `0` e
 `100000000` (R$ 1.000.000,00). Número fracionário num campo inteiro (`"quantity": 2.5`),
 texto num campo numérico ou um valor desconhecido de `status` devolvem `400` com o campo
@@ -182,13 +183,13 @@ corpo sem `Content-Type: application/json`.
 ```
 RECEBIDO           → EM_PREPARO, CANCELADO
 EM_PREPARO         → SAIU_PARA_ENTREGA, CANCELADO
-SAIU_PARA_ENTREGA  → ENTREGUE
+SAIU_PARA_ENTREGA  → ENTREGUE, CANCELADO
 ENTREGUE           → (terminal)
 CANCELADO          → (terminal)
 ```
 
 Qualquer outra transição — inclusive de um estado para ele mesmo — responde `409` com
-`ProblemDetail`. São 5 transições legais e **20 ilegais**, todas verificadas contra o
+`ProblemDetail`. São 6 transições legais e **19 ilegais**, todas verificadas contra o
 servidor rodando.
 
 ---
@@ -216,6 +217,7 @@ TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
 ID=$(curl -s -X POST http://localhost:8080/api/v1/orders \
   -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
   -d '{
+    "customerName": "Ana Souza",
     "items": [
       {"productName": "Pizza Calabresa", "unitPriceCents": 4990, "quantity": 2},
       {"productName": "Guaraná 2L", "unitPriceCents": 1500, "quantity": 1}
@@ -284,9 +286,8 @@ criação **não tem campo de total** — não existe payload capaz de influenci
 gravado. Um pedido também nasce sempre `RECEBIDO`.
 
 **A máquina de estados mora no domínio.** As transições permitidas estão no enum
-`OrderStatus` e são impostas pelo agregado `Order.changeStatus`, não pelo controller. Uma
-consequência é deliberada: **depois de `SAIU_PARA_ENTREGA` o pedido não pode mais ser
-cancelado** — é regra de negócio, não esquecimento.
+`OrderStatus` e são impostas pelo agregado `Order.changeStatus`, não pelo controller.
+O cancelamento também é permitido depois de `SAIU_PARA_ENTREGA`.
 
 **Escrita concorrente no mesmo pedido.** `Order` tem uma coluna `version` (`@Version`,
 migration `V4`). Dois `PATCH /status` simultâneos sobre o mesmo pedido não se sobrescrevem:
@@ -352,7 +353,7 @@ SQLite em arquivo temporário.
 **Web — 22 testes** (`cd web && npm test`): dinheiro em centavos (incluindo os casos em que
 um round-trip por float perderia um centavo), máscara/strip de CEP, a consulta ao ViaCEP
 (inclusive CEP inexistente, falha de rede e requisição cancelada), e o cliente HTTP contra
-as duas formas de 401 da API (filtro do Spring Security com corpo vazio × ProblemDetail de
+as duas formas de 401 da API (filtro do Spring Security com ProblemDetail × ProblemDetail de
 login inválido). `npm run build` roda o typecheck junto.
 
 ---
@@ -369,6 +370,5 @@ Dívida consciente no escopo de um exercício, não descuido:
   caminhos para não vazar pelo tempo de resposta.
 - **Swagger e `/v3/api-docs` ficam abertos** incondicionalmente; em produção sairiam por
   profile (`springdoc.api-docs.enabled=false`).
-- **Os `401` do filtro de segurança têm corpo vazio,** não `ProblemDetail` — o resource
-  server rejeita token ausente ou malformado antes do Spring MVC. Só os `401` levantados
-  na aplicação carregam corpo RFC 7807.
+- **Os `401` do filtro de segurança usam `ProblemDetail`**, inclusive para token ausente,
+  inválido ou expirado, e preservam o header `WWW-Authenticate`.

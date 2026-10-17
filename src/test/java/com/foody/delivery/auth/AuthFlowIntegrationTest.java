@@ -12,6 +12,12 @@ import org.springframework.test.context.DynamicPropertySource;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.UUID;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -77,6 +83,31 @@ class AuthFlowIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.title").value("E-mail already registered"))
                 .andExpect(jsonPath("$.instance").value("/api/v1/auth/register"));
+    }
+
+    @Test
+    void concurrentRegistrationsWithTheSameEmailReturnOne201AndOne409() throws Exception {
+        String email = uniqueEmail();
+        CountDownLatch start = new CountDownLatch(1);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        try {
+            List<Future<Integer>> results = List.of(
+                    executor.submit(() -> registerAfter(start, email)),
+                    executor.submit(() -> registerAfter(start, email)));
+            start.countDown();
+            assertThat(List.of(results.get(0).get(30, TimeUnit.SECONDS), results.get(1).get(30, TimeUnit.SECONDS)))
+                    .containsExactlyInAnyOrder(201, 409);
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    private int registerAfter(CountDownLatch start, String email) throws Exception {
+        start.await(30, TimeUnit.SECONDS);
+        return mockMvc.perform(post("/api/v1/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerJson(email)))
+                .andReturn().getResponse().getStatus();
     }
 
     @Test

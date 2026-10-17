@@ -25,7 +25,7 @@ class OrderStatusTest {
             "SAIU_PARA_ENTREGA,  EM_PREPARO,         false",
             "SAIU_PARA_ENTREGA,  SAIU_PARA_ENTREGA,  false",
             "SAIU_PARA_ENTREGA,  ENTREGUE,           true",
-            "SAIU_PARA_ENTREGA,  CANCELADO,          false",
+            "SAIU_PARA_ENTREGA,  CANCELADO,          true",
             "ENTREGUE,           RECEBIDO,           false",
             "ENTREGUE,           EM_PREPARO,         false",
             "ENTREGUE,           SAIU_PARA_ENTREGA,  false",

@@ -31,6 +31,9 @@ public class Order {
     @Column(name = "user_id", nullable = false, length = 36)
     private String userId;
 
+    @Column(name = "customer_name", nullable = false, length = 120)
+    private String customerName;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     private OrderStatus status;
@@ -59,13 +62,14 @@ public class Order {
     protected Order() {
     }
 
-    public static Order place(String userId, List<OrderItem> items, Address deliveryAddress) {
+    public static Order place(String userId, String customerName, List<OrderItem> items, Address deliveryAddress) {
         if (items == null || items.isEmpty()) {
             throw new IllegalArgumentException("Order requires at least one item");
         }
         Order order = new Order();
         order.id = UUID.randomUUID().toString();
         order.userId = userId;
+        order.customerName = customerName;
         order.status = OrderStatus.RECEBIDO;
         order.items = new ArrayList<>(items);
         order.deliveryAddress = deliveryAddress;
@@ -91,6 +95,10 @@ public class Order {
 
     public String getUserId() {
         return userId;
+    }
+
+    public String getCustomerName() {
+        return customerName;
     }
 
     public OrderStatus getStatus() {

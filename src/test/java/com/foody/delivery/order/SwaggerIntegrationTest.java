@@ -35,6 +35,17 @@ class SwaggerIntegrationTest extends AbstractIntegrationTest {
     }
 
     @Test
+    void orderSchemasDocumentCustomerName() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.components.schemas.CreateOrderRequest.required", hasItems("customerName")))
+                .andExpect(jsonPath("$.components.schemas.CreateOrderRequest.properties.customerName.maxLength")
+                        .value(120))
+                .andExpect(jsonPath("$.components.schemas.OrderResponse.properties.customerName.type")
+                        .value("string"));
+    }
+
+    @Test
     void documentDeclaresAndRequiresTheBearerJwtScheme() throws Exception {
         mockMvc.perform(get("/v3/api-docs"))
                 .andExpect(status().isOk())
