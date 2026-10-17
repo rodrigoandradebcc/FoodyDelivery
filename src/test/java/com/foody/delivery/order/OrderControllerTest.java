@@ -21,12 +21,14 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.time.Instant;
 import java.util.List;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.endsWith;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -232,5 +234,45 @@ class OrderControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(CREATE_ORDER_JSON.replace("\"unitPriceCents\": 4990", "\"unitPriceCents\": \"4990\"")))
                 .andExpect(status().isCreated());
+    }
+
+    @Test
+    void bindingFailuresOnQueryParametersDoNotLeakClassNames() throws Exception {
+        mockMvc.perform(get("/api/v1/orders").with(jwt()).param("status", "NAO_EXISTE"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("status"))
+                .andExpect(jsonPath("$.errors[0].message").value("invalid value 'NAO_EXISTE'"));
+        mockMvc.perform(get("/api/v1/orders").with(jwt()).param("page", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("page"))
+                .andExpect(jsonPath("$.errors[0].message").value("invalid value 'abc'"));
+    }
+
+    @Test
+    void unsupportedMethodIs405ProblemDetailWithAllowHeader() throws Exception {
+        mockMvc.perform(delete("/api/v1/orders/order-1").with(jwt()))
+                .andExpect(status().isMethodNotAllowed())
+                .andExpect(header().string("Allow", containsString("GET")))
+                .andExpect(jsonPath("$.title").value("Method not allowed"))
+                .andExpect(jsonPath("$.detail").value("Method DELETE is not supported for this resource"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders/order-1"));
+    }
+
+    @Test
+    void missingOrWrongContentTypeIs415ProblemDetail() throws Exception {
+        mockMvc.perform(post("/api/v1/orders").with(jwt()).content(CREATE_ORDER_JSON))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.title").value("Unsupported media type"));
+        mockMvc.perform(post("/api/v1/orders").with(jwt()).contentType(MediaType.TEXT_PLAIN).content(CREATE_ORDER_JSON))
+                .andExpect(status().isUnsupportedMediaType())
+                .andExpect(jsonPath("$.detail").value("Content-Type must be application/json"));
+    }
+
+    @Test
+    void unknownPathIs404ProblemDetail() throws Exception {
+        mockMvc.perform(get("/api/v1/orders/order-1/items").with(jwt()))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.title").value("Resource not found"))
+                .andExpect(jsonPath("$.detail").value("No resource at /api/v1/orders/order-1/items"));
     }
 }

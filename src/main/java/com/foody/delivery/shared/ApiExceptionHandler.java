@@ -4,12 +4,18 @@ import com.foody.delivery.shared.exception.ConflictException;
 import com.foody.delivery.shared.exception.NotFoundException;
 import com.foody.delivery.shared.exception.UnauthorizedException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.DatabindException;
 import tools.jackson.databind.exc.InvalidFormatException;
@@ -18,6 +24,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
@@ -25,6 +32,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(NotFoundException.class)
     ProblemDetail handleNotFound(NotFoundException ex, HttpServletRequest request) {
         return problem(HttpStatus.NOT_FOUND, "Resource not found", ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    ProblemDetail handleNoResource(NoResourceFoundException ex, HttpServletRequest request) {
+        return problem(HttpStatus.NOT_FOUND, "Resource not found",
+                "No resource at %s".formatted(request.getRequestURI()), request);
     }
 
     @ExceptionHandler(ConflictException.class)
@@ -40,7 +53,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ProblemDetail handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
         List<Map<String, String>> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(fieldError -> fieldError(fieldError.getField(), String.valueOf(fieldError.getDefaultMessage())))
+                .map(fieldError -> fieldError(fieldError.getField(), messageOf(fieldError)))
                 .toList();
         return validationProblem(errors, request);
     }
@@ -55,6 +68,26 @@ public class ApiExceptionHandler {
                 "Request body is missing or malformed", request);
     }
 
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    ResponseEntity<ProblemDetail> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex,
+                                                         HttpServletRequest request) {
+        ProblemDetail problem = problem(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed",
+                "Method %s is not supported for this resource".formatted(ex.getMethod()), request);
+        Set<HttpMethod> supported = ex.getSupportedHttpMethods();
+        ResponseEntity.BodyBuilder response = ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED);
+        if (supported != null) {
+            response.allow(supported.toArray(HttpMethod[]::new));
+        }
+        return response.body(problem);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    ProblemDetail handleUnsupportedMediaType(HttpMediaTypeNotSupportedException ex,
+                                             HttpServletRequest request) {
+        return problem(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Unsupported media type",
+                "Content-Type must be application/json", request);
+    }
+
     private ProblemDetail validationProblem(List<Map<String, String>> errors, HttpServletRequest request) {
         ProblemDetail problem =
                 problem(HttpStatus.BAD_REQUEST, "Validation failed", "One or more fields are invalid", request);
@@ -64,6 +97,13 @@ public class ApiExceptionHandler {
 
     private static Map<String, String> fieldError(String field, String message) {
         return Map.of("field", field, "message", message);
+    }
+
+    private static String messageOf(FieldError error) {
+        if (error.isBindingFailure()) {
+            return "invalid value '%s'".formatted(error.getRejectedValue());
+        }
+        return String.valueOf(error.getDefaultMessage());
     }
 
     private static DatabindException databindCause(Throwable ex) {
