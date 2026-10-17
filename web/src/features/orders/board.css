@@ -110,6 +110,24 @@
   font-size: var(--text-sm);
   color: var(--ink-soft);
 }
+.order-customer {
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.order-customer:hover,
+.order-detail-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.order-detail-link {
+  width: fit-content;
+  color: var(--ink-soft);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
 .order-summary {
   font-weight: 600;
   font-size: var(--text-lg);

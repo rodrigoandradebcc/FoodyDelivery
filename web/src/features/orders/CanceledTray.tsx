@@ -15,10 +15,19 @@ export function CanceledTray({ notify }: { notify: (msg: string) => void }) {
         </span>
         <span className="column-count mono">{page?.totalElements ?? "…"}</span>
       </summary>
-      {page && page.content.length === 0 && (
+      {query.isPending && <p className="column-empty">Carregando pedidos cancelados…</p>}
+      {query.isError && (
+        <div className="column-empty">
+          <p>Não foi possível carregar os pedidos cancelados.</p>
+          <button type="button" className="btn btn-sm btn-ghost" onClick={() => query.refetch()}>
+            Tentar de novo
+          </button>
+        </div>
+      )}
+      {!query.isError && page && page.content.length === 0 && (
         <p className="column-empty">Nenhum pedido cancelado.</p>
       )}
-      {page && page.content.length > 0 && (
+      {!query.isError && page && page.content.length > 0 && (
         <div className="tray-list">
           {page.content.map((order) => (
             <div key={order.id} className="tray-card">

@@ -1,8 +1,9 @@
 import { useState } from "react";
-import type { OrderResponse } from "../../api/types";
+import { Link } from "react-router";
+import type { Order } from "../../api/orders";
 import { maskCep } from "../../lib/cep";
 import { formatCentsBRL } from "../../lib/money";
-import { formatRelative } from "../../lib/time";
+import { formatLocalDateTime, formatRelative } from "../../lib/time";
 import { ADVANCE_LABEL, CAN_CANCEL, NEXT_STATUS } from "./statusMeta";
 import { useStatusMutation } from "./useOrders";
 
@@ -10,7 +11,7 @@ export function OrderCard({
   order,
   notify,
 }: {
-  order: OrderResponse;
+  order: Order;
   notify: (msg: string) => void;
 }) {
   const [confirmingCancel, setConfirmingCancel] = useState(false);
@@ -31,10 +32,14 @@ export function OrderCard({
         <span className="mono order-id" title={order.id}>
           #{order.id.slice(0, 8)}
         </span>
-        <time className="order-time" dateTime={order.createdAt}>
+        <time className="order-time" dateTime={order.createdAt} title={formatLocalDateTime(order.createdAt)}>
           {formatRelative(order.createdAt)}
         </time>
       </header>
+
+      <Link className="order-customer" to={`/orders/${encodeURIComponent(order.id)}`}>
+        {order.customerName}
+      </Link>
 
       <p className="order-summary">
         {first?.quantity}× {first?.productName}
@@ -70,6 +75,10 @@ export function OrderCard({
           {addr.district}, {addr.city} — {addr.state} · CEP {maskCep(addr.zipCode)}
         </p>
       </details>
+
+      <Link className="order-detail-link" to={`/orders/${encodeURIComponent(order.id)}`}>
+        Ver pedido
+      </Link>
 
       <footer className="order-card-bottom">
         <strong className="mono order-total">{formatCentsBRL(order.totalCents)}</strong>
