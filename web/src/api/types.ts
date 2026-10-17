@@ -70,12 +70,14 @@ export interface DeliveryAddress {
 }
 
 export interface CreateOrderRequest {
+  customerName: string;
   items: OrderItem[];
   deliveryAddress: DeliveryAddress;
 }
 
 export interface OrderResponse {
   id: string;
+  customerName: string;
   status: OrderStatus;
   totalCents: number;
   items: OrderItem[];

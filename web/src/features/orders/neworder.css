@@ -63,6 +63,9 @@
 .no-section > legend + * {
   clear: both;
 }
+.no-customer input {
+  width: 100%;
+}
 
 .no-item-row {
   display: grid;
