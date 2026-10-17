@@ -1,12 +1,28 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ApiError } from "../../api/http";
 import { listOrders, updateOrderStatus } from "../../api/orders";
-import type { OrderStatus } from "../../api/types";
+import type { OrderStatus, PageResponse } from "../../api/types";
+
+export function nextOrdersPage<T>(lastPage: PageResponse<T>) {
+  const nextPage = lastPage.page + 1;
+  return nextPage < lastPage.totalPages ? nextPage : undefined;
+}
+
+export function flattenOrderPages<T>(pages: PageResponse<T>[]) {
+  return pages.flatMap((page) => page.content);
+}
 
 export function useOrdersByStatus(status: OrderStatus) {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: ["orders", status],
-    queryFn: () => listOrders({ status, size: 100 }),
+    initialPageParam: 0,
+    queryFn: ({ pageParam }) => listOrders({ status, page: pageParam, size: 100 }),
+    getNextPageParam: nextOrdersPage,
+    select: (data) => ({
+      ...data,
+      content: flattenOrderPages(data.pages),
+      totalElements: data.pages[0]?.totalElements ?? 0,
+    }),
     refetchInterval: 15_000,
   });
 }
