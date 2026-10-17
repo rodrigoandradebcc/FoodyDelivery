@@ -15,7 +15,17 @@ import { createOrder } from "../../api/orders";
 import type { CreateOrderRequest } from "../../api/types";
 import { CepNotFoundError, lookupCep } from "../../api/viacep";
 import { maskCep, stripCep } from "../../lib/cep";
-import { formatCentsBRL, parseBRLToCents } from "../../lib/money";
+import { formatCentsBRL } from "../../lib/money";
+import {
+  parsePriceCents,
+  parseQuantity,
+  toFormErrorTarget,
+  validateComplement,
+  validateItemCount,
+  validateRequiredText,
+  validateState,
+  validateZipCode,
+} from "./neworderValidation";
 import "./neworder.css";
 
 type CepStatus = "idle" | "loading" | "filled";
@@ -32,6 +42,7 @@ interface ItemRow {
 }
 
 interface NewOrderForm {
+  customerName: string;
   items: ItemRow[];
   deliveryAddress: {
     street: string;
@@ -45,30 +56,6 @@ interface NewOrderForm {
 }
 
 const EMPTY_ITEM: ItemRow = { productName: "", price: "", quantity: "1" };
-
-const ITEM_FIELD_ALIAS: Record<string, keyof ItemRow> = {
-  productName: "productName",
-  unitPriceCents: "price",
-  quantity: "quantity",
-};
-
-const ITEM_PATH_RE = /^items\[(\d+)]\.(\w+)$/;
-
-function toFormPath(apiField: string): FieldPath<NewOrderForm> | null {
-  const match = ITEM_PATH_RE.exec(apiField);
-  if (match) {
-    const alias = ITEM_FIELD_ALIAS[match[2]];
-    return alias ? (`items.${match[1]}.${alias}` as FieldPath<NewOrderForm>) : null;
-  }
-  if (apiField.startsWith("deliveryAddress.")) {
-    return apiField as FieldPath<NewOrderForm>;
-  }
-  return null;
-}
-
-function parseQuantity(value: string): number {
-  return Number.parseInt(value, 10);
-}
 
 function PlusIcon() {
   return (
@@ -91,13 +78,13 @@ function LiveTotal({ control }: { control: Control<NewOrderForm> }) {
   const items = useWatch({ control, name: "items" });
   const rows = items ?? [];
   const totalCents = rows.reduce((sum, row) => {
-    const cents = parseBRLToCents(row?.price ?? "");
+    const cents = parsePriceCents(row?.price ?? "");
     const qty = parseQuantity(row?.quantity ?? "");
-    return cents !== null && Number.isInteger(qty) && qty >= 1 ? sum + cents * qty : sum;
+    return cents !== null && qty !== null ? sum + cents * qty : sum;
   }, 0);
   const units = rows.reduce((sum, row) => {
     const qty = parseQuantity(row?.quantity ?? "");
-    return Number.isInteger(qty) && qty >= 1 ? sum + qty : sum;
+    return qty !== null ? sum + qty : sum;
   }, 0);
 
   return (
@@ -126,6 +113,7 @@ export default function NewOrderPage() {
   } = useForm<NewOrderForm>({
     mode: "onBlur",
     defaultValues: {
+      customerName: "",
       items: [{ ...EMPTY_ITEM }],
       deliveryAddress: {
         street: "",
@@ -139,7 +127,11 @@ export default function NewOrderPage() {
     },
   });
 
-  const { fields, append, remove } = useFieldArray({ control, name: "items" });
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "items",
+    rules: { validate: (items) => validateItemCount(items.length) },
+  });
 
   useEffect(() => () => cepRequest.current?.abort(), []);
 
@@ -179,13 +171,14 @@ export default function NewOrderPage() {
     mutationFn: (req: CreateOrderRequest) => createOrder(req),
     onSuccess: () => navigate("/", { state: { created: true } }),
     onError: (err) => {
-      if (err instanceof ApiError && err.fieldErrors.length > 0) {
+      if (err instanceof ApiError && err.status === 400 && err.fieldErrors.length > 0) {
         let focused = false;
         for (const fe of err.fieldErrors) {
-          const path = toFormPath(fe.field);
+          const path = toFormErrorTarget(fe.field);
           if (path) {
-            setError(path, { message: fe.message }, { shouldFocus: !focused });
-            focused = true;
+            const group = path.endsWith(".root");
+            setError(path as FieldPath<NewOrderForm>, { message: fe.message }, { shouldFocus: !focused && !group });
+            if (!group) focused = true;
           } else {
             setError("root.serverError", { message: fe.message });
           }
@@ -202,10 +195,11 @@ export default function NewOrderPage() {
     const addr = form.deliveryAddress;
     const complement = addr.complement.trim();
     mutation.mutate({
+      customerName: form.customerName.trim(),
       items: form.items.map((row) => ({
         productName: row.productName.trim(),
-        unitPriceCents: parseBRLToCents(row.price) ?? 0,
-        quantity: parseQuantity(row.quantity),
+        unitPriceCents: parsePriceCents(row.price)!,
+        quantity: parseQuantity(row.quantity)!,
       })),
       deliveryAddress: {
         street: addr.street.trim(),
@@ -213,7 +207,7 @@ export default function NewOrderPage() {
         complement: complement === "" ? null : complement,
         district: addr.district.trim(),
         city: addr.city.trim(),
-        state: addr.state,
+        state: addr.state.trim().toUpperCase(),
         zipCode: addr.zipCode,
       },
     });
@@ -241,8 +235,27 @@ export default function NewOrderPage() {
         </p>
       )}
 
+      <div className="no-section card field no-customer">
+        <label htmlFor="customerName">Cliente</label>
+        <input
+          id="customerName"
+          maxLength={120}
+          autoComplete="name"
+          aria-invalid={!!errors.customerName}
+          {...register("customerName", {
+            validate: (value) => validateRequiredText(value, "o cliente"),
+          })}
+        />
+        {errors.customerName && (
+          <span className="field-error" role="alert">{errors.customerName.message}</span>
+        )}
+      </div>
+
       <fieldset className="no-section card">
         <legend>Itens</legend>
+        {errors.items?.root && (
+          <span className="field-error" role="alert">{errors.items.root.message}</span>
+        )}
         {fields.map((field, i) => {
           const itemErrors = errors.items?.[i];
           return (
@@ -253,7 +266,7 @@ export default function NewOrderPage() {
                   id={`items.${i}.productName`}
                   aria-invalid={!!itemErrors?.productName}
                   {...register(`items.${i}.productName`, {
-                    validate: (v) => v.trim() !== "" || "Informe o produto.",
+                    validate: (v) => validateRequiredText(v, "o produto"),
                   })}
                 />
                 {itemErrors?.productName && (
@@ -271,7 +284,7 @@ export default function NewOrderPage() {
                   aria-invalid={!!itemErrors?.price}
                   {...register(`items.${i}.price`, {
                     validate: (value) =>
-                      parseBRLToCents(value) !== null || "Preço inválido — use 0,00.",
+                      parsePriceCents(value) !== null || "Preço inválido — máximo R$ 1.000.000,00 e até 2 decimais.",
                   })}
                 />
                 {itemErrors?.price && (
@@ -287,10 +300,8 @@ export default function NewOrderPage() {
                   inputMode="numeric"
                   aria-invalid={!!itemErrors?.quantity}
                   {...register(`items.${i}.quantity`, {
-                    validate: (value) => {
-                      const qty = parseQuantity(value);
-                      return (Number.isInteger(qty) && qty >= 1) || "Quantidade mínima: 1.";
-                    },
+                    validate: (value) =>
+                      parseQuantity(value) !== null || "Quantidade deve ser um inteiro de 1 a 1000.",
                   })}
                 />
                 {itemErrors?.quantity && (
@@ -314,6 +325,7 @@ export default function NewOrderPage() {
         <button
           type="button"
           className="btn btn-sm btn-ghost no-item-add"
+          disabled={fields.length >= 100}
           onClick={() => append({ ...EMPTY_ITEM })}
         >
           <PlusIcon />
@@ -323,13 +335,16 @@ export default function NewOrderPage() {
 
       <fieldset className="no-section card">
         <legend>Endereço de entrega</legend>
+        {addressErrors?.root && (
+          <span className="field-error" role="alert">{addressErrors.root.message}</span>
+        )}
         <div className="no-addr-grid">
           <div className="field no-cep">
             <label htmlFor="deliveryAddress.zipCode">CEP</label>
             <Controller
               control={control}
               name="deliveryAddress.zipCode"
-              rules={{ validate: (v) => v.length === 8 || "CEP deve ter 8 dígitos." }}
+              rules={{ validate: validateZipCode }}
               render={({ field }) => {
                 function handleCepChange(event: ChangeEvent<HTMLInputElement>) {
                   const digits = stripCep(event.target.value);
@@ -369,12 +384,11 @@ export default function NewOrderPage() {
             <label htmlFor="deliveryAddress.street">Rua</label>
             <input
               id="deliveryAddress.street"
-              maxLength={150}
+              maxLength={120}
               autoComplete="street-address"
               aria-invalid={!!addressErrors?.street}
               {...register("deliveryAddress.street", {
-                required: "Informe a rua.",
-                maxLength: { value: 150, message: "Máximo de 150 caracteres." },
+                validate: (value) => validateRequiredText(value, "a rua"),
               })}
             />
             {addressErrors?.street && (
@@ -387,11 +401,10 @@ export default function NewOrderPage() {
             <label htmlFor="deliveryAddress.number">Número</label>
             <input
               id="deliveryAddress.number"
-              maxLength={20}
+              maxLength={120}
               aria-invalid={!!addressErrors?.number}
               {...register("deliveryAddress.number", {
-                required: "Informe o número.",
-                maxLength: { value: 20, message: "Máximo de 20 caracteres." },
+                validate: (value) => validateRequiredText(value, "o número"),
               })}
             />
             {addressErrors?.number && (
@@ -404,10 +417,10 @@ export default function NewOrderPage() {
             <label htmlFor="deliveryAddress.complement">Complemento (opcional)</label>
             <input
               id="deliveryAddress.complement"
-              maxLength={150}
+              maxLength={120}
               aria-invalid={!!addressErrors?.complement}
               {...register("deliveryAddress.complement", {
-                maxLength: { value: 150, message: "Máximo de 150 caracteres." },
+                validate: validateComplement,
               })}
             />
             {addressErrors?.complement && (
@@ -420,11 +433,10 @@ export default function NewOrderPage() {
             <label htmlFor="deliveryAddress.district">Bairro</label>
             <input
               id="deliveryAddress.district"
-              maxLength={100}
+              maxLength={120}
               aria-invalid={!!addressErrors?.district}
               {...register("deliveryAddress.district", {
-                required: "Informe o bairro.",
-                maxLength: { value: 100, message: "Máximo de 100 caracteres." },
+                validate: (value) => validateRequiredText(value, "o bairro"),
               })}
             />
             {addressErrors?.district && (
@@ -437,12 +449,11 @@ export default function NewOrderPage() {
             <label htmlFor="deliveryAddress.city">Cidade</label>
             <input
               id="deliveryAddress.city"
-              maxLength={100}
+              maxLength={120}
               autoComplete="address-level2"
               aria-invalid={!!addressErrors?.city}
               {...register("deliveryAddress.city", {
-                required: "Informe a cidade.",
-                maxLength: { value: 100, message: "Máximo de 100 caracteres." },
+                validate: (value) => validateRequiredText(value, "a cidade"),
               })}
             />
             {addressErrors?.city && (
@@ -456,7 +467,7 @@ export default function NewOrderPage() {
             <select
               id="deliveryAddress.state"
               aria-invalid={!!addressErrors?.state}
-              {...register("deliveryAddress.state", { required: "Selecione a UF." })}
+              {...register("deliveryAddress.state", { validate: validateState })}
             >
               <option value="">—</option>
               {UFS.map((u) => (
