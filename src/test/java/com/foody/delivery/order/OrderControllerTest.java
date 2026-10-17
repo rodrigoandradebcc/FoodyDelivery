@@ -186,4 +186,27 @@ class OrderControllerTest {
                 .andExpect(jsonPath("$.title").value("Malformed request body"))
                 .andExpect(jsonPath("$.detail").value("Request body is missing or malformed"));
     }
+
+    @Test
+    void unknownStatusValueInTheBodyIs400NamingTheFieldAndTheAllowedValues() throws Exception {
+        mockMvc.perform(patch("/api/v1/orders/order-1/status").with(jwt())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\": \"NAO_EXISTE\"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[0].field").value("status"))
+                .andExpect(jsonPath("$.errors[0].message")
+                        .value("must be one of [RECEBIDO, EM_PREPARO, SAIU_PARA_ENTREGA, ENTREGUE, CANCELADO]"));
+        verify(orderService, never()).updateStatus(any(), any());
+    }
+
+    @Test
+    void nonNumericQuantityIs400NamingTheField() throws Exception {
+        mockMvc.perform(post("/api/v1/orders").with(jwt())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(CREATE_ORDER_JSON.replace("\"quantity\": 2", "\"quantity\": \"two\"")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title").value("Validation failed"))
+                .andExpect(jsonPath("$.errors[0].field").value("items[0].quantity"))
+                .andExpect(jsonPath("$.errors[0].message").value("invalid value 'two'"));
+    }
 }

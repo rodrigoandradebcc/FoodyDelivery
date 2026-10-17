@@ -10,8 +10,12 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.DatabindException;
+import tools.jackson.databind.exc.InvalidFormatException;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -35,21 +39,66 @@ public class ApiExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     ProblemDetail handleValidation(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        ProblemDetail problem =
-                problem(HttpStatus.BAD_REQUEST, "Validation failed", "One or more fields are invalid", request);
         List<Map<String, String>> errors = ex.getBindingResult().getFieldErrors().stream()
-                .map(fieldError -> Map.of(
-                        "field", fieldError.getField(),
-                        "message", String.valueOf(fieldError.getDefaultMessage())))
+                .map(fieldError -> fieldError(fieldError.getField(), String.valueOf(fieldError.getDefaultMessage())))
                 .toList();
-        problem.setProperty("errors", errors);
-        return problem;
+        return validationProblem(errors, request);
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
     ProblemDetail handleUnreadable(HttpMessageNotReadableException ex, HttpServletRequest request) {
+        DatabindException databind = databindCause(ex);
+        if (databind != null && !databind.getPath().isEmpty()) {
+            return validationProblem(List.of(fieldError(fieldPath(databind), describe(databind))), request);
+        }
         return problem(HttpStatus.BAD_REQUEST, "Malformed request body",
                 "Request body is missing or malformed", request);
+    }
+
+    private ProblemDetail validationProblem(List<Map<String, String>> errors, HttpServletRequest request) {
+        ProblemDetail problem =
+                problem(HttpStatus.BAD_REQUEST, "Validation failed", "One or more fields are invalid", request);
+        problem.setProperty("errors", errors);
+        return problem;
+    }
+
+    private static Map<String, String> fieldError(String field, String message) {
+        return Map.of("field", field, "message", message);
+    }
+
+    private static DatabindException databindCause(Throwable ex) {
+        for (Throwable cause = ex.getCause(); cause != null && cause != cause.getCause(); cause = cause.getCause()) {
+            if (cause instanceof DatabindException databind) {
+                return databind;
+            }
+        }
+        return null;
+    }
+
+    private static String fieldPath(JacksonException ex) {
+        StringBuilder path = new StringBuilder();
+        for (JacksonException.Reference reference : ex.getPath()) {
+            if (reference.getPropertyName() != null) {
+                if (!path.isEmpty()) {
+                    path.append('.');
+                }
+                path.append(reference.getPropertyName());
+            } else if (reference.getIndex() >= 0) {
+                path.append('[').append(reference.getIndex()).append(']');
+            }
+        }
+        return path.toString();
+    }
+
+    private static String describe(DatabindException ex) {
+        if (ex instanceof InvalidFormatException invalid) {
+            Class<?> target = invalid.getTargetType();
+            if (target != null && target.isEnum()) {
+                return "must be one of " + Arrays.toString(target.getEnumConstants());
+            }
+            return "invalid value '%s'".formatted(invalid.getValue());
+        }
+        return "invalid value";
     }
 
     private ProblemDetail problem(HttpStatus status, String title, String detail, HttpServletRequest request) {
