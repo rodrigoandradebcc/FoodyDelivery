@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
+import org.springframework.dao.DataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -95,5 +97,14 @@ class OrderRepositoryTest {
         assertThat(reloaded.getDeliveryAddress().getZipCode()).isEqualTo("01001000");
         assertThat(reloaded.getCreatedAt()).isEqualTo(order.getCreatedAt());
         assertThat(reloaded.getUpdatedAt()).isEqualTo(order.getUpdatedAt());
+    }
+
+    @Test
+    void anOrderWhoseUserDoesNotExistIsRejectedByTheForeignKey() {
+        Order ghost = Order.place("ghost-user-id", List.of(new OrderItem("Pizza", 4990L, 1)), address());
+
+        assertThatThrownBy(() -> orderRepository.saveAndFlush(ghost))
+                .isInstanceOf(DataAccessException.class)
+                .hasMessageContaining("FOREIGN KEY constraint failed");
     }
 }
