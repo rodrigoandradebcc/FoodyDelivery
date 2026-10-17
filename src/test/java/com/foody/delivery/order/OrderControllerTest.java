@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.CannotAcquireLockException;
 import org.springframework.http.MediaType;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
@@ -281,6 +282,19 @@ class OrderControllerTest {
     void concurrentModificationIsA409ProblemDetail() throws Exception {
         when(orderService.updateStatus("order-1", OrderStatus.EM_PREPARO))
                 .thenThrow(new ObjectOptimisticLockingFailureException(Order.class, "order-1"));
+
+        mockMvc.perform(patch("/api/v1/orders/order-1/status").with(jwt())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"status\": \"EM_PREPARO\"}"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.title").value("Concurrent modification"))
+                .andExpect(jsonPath("$.detail").value("The resource was modified by another request; reload it and retry"))
+                .andExpect(jsonPath("$.instance").value("/api/v1/orders/order-1/status"));
+    }
+
+    @Test
+    void sqliteWriteLockContentionIsA409ProblemDetail() throws Exception {
+        when(orderService.updateStatus("order-1", OrderStatus.EM_PREPARO))
+                .thenThrow(new CannotAcquireLockException("[SQLITE_BUSY] The database file is locked"));
 
         mockMvc.perform(patch("/api/v1/orders/order-1/status").with(jwt())
                         .contentType(MediaType.APPLICATION_JSON).content("{\"status\": \"EM_PREPARO\"}"))

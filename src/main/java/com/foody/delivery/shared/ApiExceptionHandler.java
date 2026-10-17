@@ -4,6 +4,8 @@ import com.foody.delivery.shared.exception.ConflictException;
 import com.foody.delivery.shared.exception.NotFoundException;
 import com.foody.delivery.shared.exception.UnauthorizedException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.CannotAcquireLockException;
+import org.springframework.dao.ConcurrencyFailureException;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -46,8 +48,8 @@ public class ApiExceptionHandler {
         return problem(HttpStatus.CONFLICT, ex.getTitle(), ex.getMessage(), request);
     }
 
-    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
-    ProblemDetail handleOptimisticLock(ObjectOptimisticLockingFailureException ex, HttpServletRequest request) {
+    @ExceptionHandler({ObjectOptimisticLockingFailureException.class, CannotAcquireLockException.class})
+    ProblemDetail handleOptimisticLock(ConcurrencyFailureException ex, HttpServletRequest request) {
         return problem(HttpStatus.CONFLICT, "Concurrent modification",
                 "The resource was modified by another request; reload it and retry", request);
     }
