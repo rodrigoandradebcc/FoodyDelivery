@@ -27,14 +27,14 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({ mode: "onBlur" });
 
-  if (isAuthenticated) return <Navigate to="/" replace />;
+  const from = (location.state as { from?: string } | null)?.from ?? "/";
+
+  if (isAuthenticated) return <Navigate to={from} replace />;
 
   const onSubmit: SubmitHandler<LoginForm> = async ({ email, password }) => {
     try {
       await signIn(email, password);
-      navigate((location.state as { from?: string } | null)?.from ?? "/", {
-        replace: true,
-      });
+      navigate(from, { replace: true });
     } catch (err) {
       setError("root.serverError", { message: loginErrorMessage(err) });
     }
