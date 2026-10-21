@@ -9,6 +9,7 @@ export default function PlusIcon() {
       strokeWidth="1.75"
       strokeLinecap="round"
       aria-hidden="true"
+      focusable="false"
     >
       <path d="M8 3.5v9M3.5 8h9" />
     </svg>

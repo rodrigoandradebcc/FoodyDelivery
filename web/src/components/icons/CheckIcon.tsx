@@ -10,6 +10,7 @@ export default function CheckIcon() {
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
+      focusable="false"
     >
       <path d="m3.5 8.5 3 3 6-7" />
     </svg>
