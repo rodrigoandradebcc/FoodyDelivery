@@ -30,7 +30,7 @@ export default function LoginPage() {
     <div className="auth-page">
       <AuthBand />
       <main className="auth-card card">
-        <ThemeToggle className="auth-theme-toggle" labelClassName="visually-hidden" />
+        <ThemeToggle className="auth-theme-toggle" labelClassName="visually-hidden" iconClassName="auth-theme-icon" />
         <p className="auth-sub">Entre para acompanhar o quadro de pedidos.</p>
 
         {sessionExpired && (

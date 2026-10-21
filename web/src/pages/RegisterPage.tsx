@@ -29,7 +29,7 @@ export default function RegisterPage() {
     <div className="auth-page">
       <AuthBand />
       <main className="auth-card card">
-        <ThemeToggle className="auth-theme-toggle" labelClassName="visually-hidden" />
+        <ThemeToggle className="auth-theme-toggle" labelClassName="visually-hidden" iconClassName="auth-theme-icon" />
         <p className="auth-sub">Crie sua conta para registrar pedidos.</p>
 
         {formError && (

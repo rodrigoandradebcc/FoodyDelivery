@@ -43,7 +43,7 @@ export function AppShell() {
             <span className="rail-label">Quadro de pedidos</span>
           </NavLink>
         </nav>
-        <ThemeToggle className="rail-item rail-theme" labelClassName="rail-label" />
+        <ThemeToggle className="rail-item rail-theme" labelClassName="rail-label" iconClassName="rail-icon" />
         <button type="button" className="rail-item rail-signout" onClick={signOut}>
           <SignOutIcon />
           <span className="rail-label">Sair</span>
