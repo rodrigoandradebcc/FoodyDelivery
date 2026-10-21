@@ -27,12 +27,12 @@ function Tab({
       type="button"
       role="tab"
       aria-selected={active}
+      data-status={status}
       className={`mtab${active ? " mtab-active" : ""}${status === "CANCELADO" ? " mtab-exit" : ""}`}
-      style={active ? { borderBottomColor: meta.ink, color: meta.ink } : undefined}
       onClick={() => onSelect(status)}
     >
       {meta.icon} {meta.label}
-      <span className="mtab-count mono">{query.data?.totalElements ?? "…"}</span>
+      <span className="mtab-count tnum">{query.data?.totalElements ?? "…"}</span>
     </button>
   );
 }
