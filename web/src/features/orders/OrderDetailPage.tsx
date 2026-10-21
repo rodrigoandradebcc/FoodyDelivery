@@ -6,11 +6,13 @@ import { formatLocalDateTime } from "../../lib/time";
 import { STATUS_META } from "./statusMeta";
 import { StatusActions } from "./StatusActions";
 import { useOrderDetail } from "./useOrderDetail";
+import { useStatusMutationError } from "./useStatusMutationError";
 import "./orderdetail.css";
 
 export default function OrderDetailPage() {
   const { id } = useParams();
-  const { query, order, notFound, loadErrorMessage, mutationError, onChangeStart, onError } = useOrderDetail(id);
+  const { query, order, notFound, loadErrorMessage } = useOrderDetail(id);
+  const { mutationError, onChangeStart, onError } = useStatusMutationError();
 
   if (query.isPending) {
     return (

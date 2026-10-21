@@ -4,6 +4,7 @@ import { Link, Navigate } from "react-router";
 import { useAuth } from "../auth/useAuth";
 import AuthBand from "./AuthBand";
 import type { LoginForm } from "./loginForm";
+import { useLoginRedirect } from "./useLoginRedirect";
 import { useLoginSubmit } from "./useLoginSubmit";
 import "./auth.css";
 
@@ -17,7 +18,8 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({ mode: "onBlur" });
 
-  const { from, onSubmit } = useLoginSubmit(setError);
+  const from = useLoginRedirect();
+  const onSubmit = useLoginSubmit(setError);
 
   if (isAuthenticated) return <Navigate to={from} replace />;
 

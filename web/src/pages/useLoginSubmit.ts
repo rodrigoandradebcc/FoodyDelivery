@@ -1,15 +1,14 @@
 import type { SubmitHandler, UseFormSetError } from "react-hook-form";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useAuth } from "../auth/useAuth";
 import type { LoginForm } from "./loginForm";
 import { loginErrorMessage } from "./loginErrorMessage";
+import { useLoginRedirect } from "./useLoginRedirect";
 
 export function useLoginSubmit(setError: UseFormSetError<LoginForm>) {
   const { signIn } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-
-  const from = (location.state as { from?: string } | null)?.from ?? "/";
+  const from = useLoginRedirect();
 
   const onSubmit: SubmitHandler<LoginForm> = async ({ email, password }) => {
     try {
@@ -20,5 +19,5 @@ export function useLoginSubmit(setError: UseFormSetError<LoginForm>) {
     }
   };
 
-  return { from, onSubmit };
+  return onSubmit;
 }
