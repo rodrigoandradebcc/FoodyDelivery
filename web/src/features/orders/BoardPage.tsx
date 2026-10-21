@@ -1,6 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
-import { useLocation } from "react-router";
+import { Link, useLocation } from "react-router";
 import { useMediaQuery } from "../../lib/useMediaQuery";
 import { Column } from "./Column";
 import { MobileBoard } from "./MobileBoard";
@@ -34,6 +34,9 @@ export default function BoardPage() {
         Cada pedido segue as quatro etapas abaixo. Cancelar tira o pedido do fluxo — os
         cancelados ficam na última coluna do quadro.
       </p>
+      <Link to="/orders/new" className="btn btn-primary btn-pill btn-lg">
+        Novo pedido
+      </Link>
 
       {isDesktop ? (
         <div className="board-columns">
