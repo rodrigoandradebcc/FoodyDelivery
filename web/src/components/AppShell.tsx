@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router";
-import { useAuth } from "../auth/auth";
+import { useAuth } from "../auth/useAuth";
 import BoardIcon from "./icons/BoardIcon";
 import ChevronIcon from "./icons/ChevronIcon";
 import SignOutIcon from "./icons/SignOutIcon";
