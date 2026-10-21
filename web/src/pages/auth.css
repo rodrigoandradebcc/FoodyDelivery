@@ -18,6 +18,7 @@
   font-size: var(--text-2xl);
   font-weight: 700;
 }
+
 .auth-brand span {
   color: var(--accent);
 }
@@ -33,23 +34,12 @@
   gap: var(--sp-4);
 }
 
-.auth-alert {
-  padding: var(--sp-3);
-  border-radius: var(--r-md);
-  background: var(--st-cancelado-bg);
-  color: var(--danger);
-  font-size: var(--text-sm);
-}
-.auth-alert-info {
-  background: var(--st-recebido-bg);
-  color: var(--st-recebido-ink);
-}
-
 .auth-alt {
   font-size: var(--text-sm);
   color: var(--ink-soft);
   text-align: center;
 }
+
 .auth-alt a {
   color: var(--accent);
   font-weight: 600;
@@ -58,10 +48,12 @@
 .pw-wrap {
   position: relative;
 }
+
 .pw-wrap > input {
   width: 100%;
   padding-right: 5.5rem;
 }
+
 .pw-toggle {
   position: absolute;
   right: var(--sp-2);

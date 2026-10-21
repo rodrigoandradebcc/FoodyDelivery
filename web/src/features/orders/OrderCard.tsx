@@ -4,6 +4,7 @@ import { maskCep } from "../../lib/cep";
 import { formatCentsBRL } from "../../lib/money";
 import { formatLocalDateTime, formatRelative } from "../../lib/time";
 import { StatusActions } from "./StatusActions";
+import "./ordercard.css";
 
 export function OrderCard({
   order,
