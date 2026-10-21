@@ -380,8 +380,8 @@ validação de todos os DTOs, unidades (`Order`, `OrderItem`, `OrderMapper`, `To
 pedidos, persistência (inclusive lock otimista), segurança (inclusive CORS) e OpenAPI sobre
 SQLite em arquivo temporário.
 
-**Web — 101 testes** (`cd web && npm test`), 13 deles fluxos de UI (login, criação de pedido e
-mudança de status contra uma API falsa), além de dinheiro em centavos (incluindo os casos em que
+**Web — 105 testes** (`cd web && npm test`), 17 deles fluxos de UI (cadastro, login, proteção de
+rota, criação de pedido, mudança de status e tema, contra uma API falsa), além de dinheiro em centavos (incluindo os casos em que
 um round-trip por float perderia um centavo), máscara/strip de CEP, a consulta ao ViaCEP
 (inclusive CEP inexistente, falha de rede e requisição cancelada), e o cliente HTTP contra
 as duas formas de 401 da API (filtro do Spring Security com ProblemDetail × ProblemDetail de
