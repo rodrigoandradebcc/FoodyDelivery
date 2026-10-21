@@ -7,7 +7,7 @@ import "@fontsource-variable/public-sans";
 import "./index.css";
 import { ApiError } from "./api/http";
 import App from "./App";
-import { AuthProvider } from "./auth/auth";
+import { AuthProvider } from "./auth/AuthProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
