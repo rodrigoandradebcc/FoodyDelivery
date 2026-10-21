@@ -45,7 +45,7 @@ export function StatusActions({
           <button
             ref={backButton}
             type="button"
-            className={`btn${size} btn-ghost`}
+            className={`btn${size} btn-ghost btn-pill`}
             aria-label={`Voltar para ações do pedido de ${order.customerName}`}
             disabled={busy}
             onClick={() => setConfirmingCancel(false)}
@@ -54,7 +54,7 @@ export function StatusActions({
           </button>
           <button
             type="button"
-            className={`btn${size} btn-danger`}
+            className={`btn${size} btn-danger btn-pill`}
             aria-label={`Confirmar cancelamento do pedido de ${order.customerName}`}
             disabled={busy}
             onClick={() => changeStatus("CANCELADO")}
@@ -67,7 +67,7 @@ export function StatusActions({
           {canCancel && (
             <button
               type="button"
-              className={`btn${size} btn-danger-ghost`}
+              className={`btn${size} btn-danger-ghost btn-pill`}
               aria-label={`Cancelar pedido de ${order.customerName}`}
               disabled={busy}
               onClick={() => setConfirmingCancel(true)}
@@ -78,7 +78,7 @@ export function StatusActions({
           {next && advanceLabel && (
             <button
               type="button"
-              className={`btn${size} btn-primary`}
+              className={`btn${size} btn-primary btn-pill`}
               aria-label={`${advanceLabel} para pedido de ${order.customerName}`}
               disabled={busy}
               onClick={() => changeStatus(next)}
