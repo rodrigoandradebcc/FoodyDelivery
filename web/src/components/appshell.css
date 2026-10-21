@@ -170,8 +170,8 @@
   border: 0;
 }
 
-@media (min-width: 640px) and (hover: hover) {
-  .shell:not([data-rail="open"]) .rail-item:hover .rail-label {
+@media (min-width: 640px) {
+  .shell:not([data-rail="open"]) .rail-label {
     left: calc(100% + var(--sp-3));
     top: 50%;
     transform: translateY(-50%);
@@ -181,7 +181,7 @@
     padding: var(--sp-1) var(--sp-3);
     overflow: visible;
     clip: auto;
-    clip-path: none;
+    clip-path: var(--flyout-clip, inset(50%));
     border-radius: var(--r-sm);
     background: var(--ink);
     color: var(--surface);
@@ -190,26 +190,13 @@
     pointer-events: none;
     z-index: var(--z-overlay);
   }
+  .shell:not([data-rail="open"]) .rail-item:focus-visible {
+    --flyout-clip: none;
+  }
 }
-@media (min-width: 640px) {
-  .shell:not([data-rail="open"]) .rail-item:focus-visible .rail-label {
-    left: calc(100% + var(--sp-3));
-    top: 50%;
-    transform: translateY(-50%);
-    width: auto;
-    height: auto;
-    margin: 0;
-    padding: var(--sp-1) var(--sp-3);
-    overflow: visible;
-    clip: auto;
-    clip-path: none;
-    border-radius: var(--r-sm);
-    background: var(--ink);
-    color: var(--surface);
-    font-size: var(--text-sm);
-    box-shadow: var(--shadow-md);
-    pointer-events: none;
-    z-index: var(--z-overlay);
+@media (min-width: 640px) and (hover: hover) {
+  .shell:not([data-rail="open"]) .rail-item:hover {
+    --flyout-clip: none;
   }
 }
 
