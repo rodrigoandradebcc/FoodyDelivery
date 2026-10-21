@@ -1,5 +1,9 @@
 import type { OrderStatus } from "../../api/types";
-import { OrderListStates } from "./OrderListStates";
+import { AnimatedOrderCard } from "./AnimatedOrderCard";
+import { ColumnEmpty } from "./ColumnEmpty";
+import { LoadMoreFooter } from "./LoadMoreFooter";
+import { OrderListError } from "./OrderListError";
+import { OrderListSkeleton } from "./OrderListSkeleton";
 import { STATUS_META } from "./statusMeta";
 import { useOrdersByStatus } from "./useOrders";
 
@@ -28,7 +32,36 @@ export function Column({
         <span className="column-count tnum">{page?.totalElements ?? "…"}</span>
       </header>
 
-      <OrderListStates status={status} notify={notify} query={query} variant="column" />
+      {query.isPending && (
+        <div className="column-list" aria-hidden="true">
+          <OrderListSkeleton count={3} />
+        </div>
+      )}
+
+      {query.isError && !page && (
+        <OrderListError onRetry={() => query.refetch()} />
+      )}
+
+      {page && page.content.length === 0 && <ColumnEmpty status={status} />}
+
+      {page && page.content.length > 0 && (
+        <div className="column-list">
+          {page.content.map((order, index) => (
+            <AnimatedOrderCard
+              key={order.id}
+              order={order}
+              index={index}
+              notify={notify}
+            />
+          ))}
+          <LoadMoreFooter
+            hasNextPage={!!query.hasNextPage}
+            isFetchingNextPage={query.isFetchingNextPage}
+            isFetchNextPageError={query.isFetchNextPageError}
+            onLoadMore={() => query.fetchNextPage()}
+          />
+        </div>
+      )}
     </section>
   );
 }
