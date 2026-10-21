@@ -2,30 +2,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
 import PageHeader from "../../components/PageHeader";
-import { PlusIcon } from "../../components/icons";
+import { CheckIcon, PlusIcon } from "../../components/icons";
 import { useMediaQuery } from "../../lib/useMediaQuery";
 import { Column } from "./Column";
 import { MobileBoard } from "./MobileBoard";
 import { PIPELINE } from "./statusMeta";
 import "./board.css";
-
-function CheckIcon() {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="m3.5 8.5 3 3 6-7" />
-    </svg>
-  );
-}
 
 export default function BoardPage() {
   const location = useLocation();
