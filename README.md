@@ -334,8 +334,9 @@ web/src
 ├── auth/               AuthProvider, useAuth, RequireAuth
 ├── components/         AppShell (rail + faixa + Outlet), PageHeader, ícones
 ├── features/orders/    BoardPage, Column, OrderCard, MobileBoard, NewOrderPage,
-│                       OrderDetailPage, StatusActions, statusMeta, useOrders
-├── lib/                money (centavos inteiros), cep, time, useMediaQuery
+│                       OrderDetailPage, StatusActions, statusMeta, useOrders,
+│                       newOrder/ (hooks, fieldsets e mapeamento do payload)
+├── lib/                money (centavos inteiros), cep, time, greeting, useMediaQuery
 ├── pages/              LoginPage, RegisterPage
 └── index.css           design tokens e classes compartilhadas
 ```
@@ -350,12 +351,13 @@ validação de todos os DTOs, unidades (`Order`, `OrderItem`, `OrderMapper`, `To
 pedidos, persistência (inclusive lock otimista), segurança (inclusive CORS) e OpenAPI sobre
 SQLite em arquivo temporário.
 
-**Web — 52 testes** (`cd web && npm test`), 12 deles fluxos de UI (login, criação de pedido e
+**Web — 89 testes** (`cd web && npm test`), 12 deles fluxos de UI (login, criação de pedido e
 mudança de status contra uma API falsa), além de dinheiro em centavos (incluindo os casos em que
 um round-trip por float perderia um centavo), máscara/strip de CEP, a consulta ao ViaCEP
 (inclusive CEP inexistente, falha de rede e requisição cancelada), e o cliente HTTP contra
 as duas formas de 401 da API (filtro do Spring Security com ProblemDetail × ProblemDetail de
-login inválido). `npm run build` roda o typecheck junto.
+login inválido), e os módulos puros de erros (cadastro, login, status), rótulos, atraso de
+animação, armazenamento do token e totais da comanda. `npm run build` roda o typecheck junto.
 
 ---
 
