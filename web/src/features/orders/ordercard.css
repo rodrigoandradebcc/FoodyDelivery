@@ -176,6 +176,8 @@
 .order-eye {
   display: grid;
   place-items: center;
+  padding: var(--sp-1);
+  margin: calc(var(--sp-1) * -1);
   color: var(--primary);
 }
 
@@ -185,6 +187,7 @@
 
 .order-card[data-status="CANCELADO"] {
   background: var(--surface-dim);
+  border-color: var(--line);
   box-shadow: none;
 }
 
