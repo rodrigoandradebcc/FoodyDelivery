@@ -32,7 +32,7 @@ describe("cadastro de usuário", () => {
     const { user } = renderApp("/register");
 
     await user.type(await screen.findByLabelText("Nome"), "Ana");
-    await user.type(screen.getByLabelText("E-mail"), VALID_USER.email);
+    await user.type(screen.getByLabelText("E-mail"), VALID_USER.email.toUpperCase());
     await user.type(screen.getByLabelText("Senha"), "outra-senha-123");
     await user.click(screen.getByRole("button", { name: "Criar conta" }));
 
