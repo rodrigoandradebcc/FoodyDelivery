@@ -1,5 +1,6 @@
 import { useSearchParams } from "react-router";
 import type { OrderStatus } from "../../api/types";
+import MobileTab from "./MobileTab";
 import { OrderCard } from "./OrderCard";
 import { EMPTY_HINT, PIPELINE, STATUS_META } from "./statusMeta";
 import { useOrdersByStatus } from "./useOrders";
@@ -9,32 +10,6 @@ const TABS: readonly OrderStatus[] = [...PIPELINE, "CANCELADO"];
 
 function isStatus(value: string | null): value is OrderStatus {
   return value !== null && (TABS as readonly string[]).includes(value);
-}
-
-function Tab({
-  status,
-  active,
-  onSelect,
-}: {
-  status: OrderStatus;
-  active: boolean;
-  onSelect: (s: OrderStatus) => void;
-}) {
-  const meta = STATUS_META[status];
-  const query = useOrdersByStatus(status);
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      data-status={status}
-      className={`mtab${active ? " mtab-active" : ""}${status === "CANCELADO" ? " mtab-exit" : ""}`}
-      onClick={() => onSelect(status)}
-    >
-      {meta.icon} {meta.label}
-      <span className="mtab-count tnum">{query.data?.totalElements ?? "…"}</span>
-    </button>
-  );
 }
 
 export function MobileBoard({ notify }: { notify: (msg: string) => void }) {
@@ -52,7 +27,7 @@ export function MobileBoard({ notify }: { notify: (msg: string) => void }) {
     <div className="mboard">
       <div className="mtabs" role="tablist" aria-label="Status do pedido">
         {TABS.map((status) => (
-          <Tab key={status} status={status} active={selected === status} onSelect={select} />
+          <MobileTab key={status} status={status} active={selected === status} onSelect={select} />
         ))}
       </div>
 

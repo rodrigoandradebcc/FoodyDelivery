@@ -6,7 +6,6 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Navigate, useLocation } from "react-router";
 import { login as apiLogin } from "../api/auth";
 import { setOnUnauthorized, setTokenProvider } from "../api/http";
 
@@ -86,13 +85,4 @@ export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
-}
-
-export function RequireAuth({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth();
-  const location = useLocation();
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
-  }
-  return children;
 }

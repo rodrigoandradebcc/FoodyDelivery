@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { Link, NavLink, Outlet } from "react-router";
 import { useAuth } from "../auth/auth";
-import { BoardIcon, ChevronIcon, SignOutIcon } from "./icons";
+import BoardIcon from "./icons/BoardIcon";
+import ChevronIcon from "./icons/ChevronIcon";
+import SignOutIcon from "./icons/SignOutIcon";
 import "./appshell.css";
 
 export default function AppShell() {

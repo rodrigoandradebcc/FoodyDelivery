@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { OrderResponse } from "../../api/types";
-import { EyeIcon } from "../../components/icons";
+import EyeIcon from "../../components/icons/EyeIcon";
 import { maskCep } from "../../lib/cep";
 import { formatCentsBRL } from "../../lib/money";
 import { formatLocalDateTime, formatRelative } from "../../lib/time";
