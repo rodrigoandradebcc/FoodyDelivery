@@ -1,0 +1,67 @@
+.mboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+.mtabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  min-width: 0;
+  padding: var(--sp-1) 0;
+}
+
+.mtab {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  min-height: 44px;
+  padding: 0 var(--sp-3);
+  white-space: nowrap;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  touch-action: manipulation;
+}
+
+.mtab-active {
+  background: var(--st-bg);
+  color: var(--st-ink);
+  border-color: var(--st-bar);
+  box-shadow: inset 0 -3px 0 var(--st-bar);
+}
+
+.mtab-count {
+  background: var(--surface-sunken);
+  border-radius: var(--r-pill);
+  padding: 0 var(--sp-2);
+  font-size: var(--text-xs);
+}
+
+.mtab-exit {
+  border-style: dashed;
+}
+
+.mboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  min-width: 0;
+}
+
+@media (max-width: 379.98px) {
+  .mtab {
+    padding: 0 var(--sp-2);
+    gap: var(--sp-1);
+  }
+  .mtab > svg {
+    display: none;
+  }
+}

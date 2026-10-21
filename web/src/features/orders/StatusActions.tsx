@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from "react";
 import type { ApiError } from "../../api/http";
 import type { OrderResponse, OrderStatus } from "../../api/types";
 import { ADVANCE_LABEL, CAN_CANCEL, NEXT_STATUS } from "./statusMeta";
+import { useCancelConfirmation } from "./useCancelConfirmation";
 import { useStatusMutation } from "./useOrders";
 
 export function StatusActions({
@@ -15,8 +15,7 @@ export function StatusActions({
   onChangeStart?: () => void;
   compact?: boolean;
 }) {
-  const [confirmingCancel, setConfirmingCancel] = useState(false);
-  const backButton = useRef<HTMLButtonElement>(null);
+  const { confirming, backButton, askConfirmation, dismiss } = useCancelConfirmation();
   const mutation = useStatusMutation(onError);
   const next = NEXT_STATUS[order.status];
   const advanceLabel = ADVANCE_LABEL[order.status];
@@ -24,37 +23,33 @@ export function StatusActions({
   const busy = mutation.isPending;
   const size = compact ? " btn-sm" : "";
 
-  useEffect(() => {
-    if (confirmingCancel) backButton.current?.focus();
-  }, [confirmingCancel]);
-
   if (!next && !canCancel) return null;
 
   function changeStatus(status: OrderStatus) {
     onChangeStart?.();
     mutation.mutate(
       { id: order.id, status },
-      { onSettled: () => setConfirmingCancel(false) },
+      { onSettled: () => dismiss() },
     );
   }
 
   return (
     <div className={compact ? "order-actions" : "detail-actions"}>
-      {confirmingCancel ? (
+      {confirming ? (
         <>
           <button
             ref={backButton}
             type="button"
-            className={`btn${size} btn-ghost`}
+            className={`btn${size} btn-ghost btn-pill`}
             aria-label={`Voltar para ações do pedido de ${order.customerName}`}
             disabled={busy}
-            onClick={() => setConfirmingCancel(false)}
+            onClick={() => dismiss()}
           >
             Voltar
           </button>
           <button
             type="button"
-            className={`btn${size} btn-primary order-cancel-confirm`}
+            className={`btn${size} btn-danger btn-pill`}
             aria-label={`Confirmar cancelamento do pedido de ${order.customerName}`}
             disabled={busy}
             onClick={() => changeStatus("CANCELADO")}
@@ -67,10 +62,10 @@ export function StatusActions({
           {canCancel && (
             <button
               type="button"
-              className={`btn${size} btn-danger-ghost`}
+              className={`btn${size} btn-danger-ghost btn-pill`}
               aria-label={`Cancelar pedido de ${order.customerName}`}
               disabled={busy}
-              onClick={() => setConfirmingCancel(true)}
+              onClick={() => askConfirmation()}
             >
               Cancelar
             </button>
@@ -78,7 +73,7 @@ export function StatusActions({
           {next && advanceLabel && (
             <button
               type="button"
-              className={`btn${size} btn-primary`}
+              className={`btn${size} btn-primary btn-pill`}
               aria-label={`${advanceLabel} para pedido de ${order.customerName}`}
               disabled={busy}
               onClick={() => changeStatus(next)}
