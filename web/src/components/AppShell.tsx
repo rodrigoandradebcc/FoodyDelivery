@@ -4,6 +4,7 @@ import { useAuth } from "../auth/useAuth";
 import { BoardIcon } from "./icons/BoardIcon";
 import { ChevronIcon } from "./icons/ChevronIcon";
 import { SignOutIcon } from "./icons/SignOutIcon";
+import { ThemeToggle } from "./ThemeToggle";
 import "./appshell.css";
 
 export function AppShell() {
@@ -42,6 +43,7 @@ export function AppShell() {
             <span className="rail-label">Quadro de pedidos</span>
           </NavLink>
         </nav>
+        <ThemeToggle className="rail-item rail-theme" labelClassName="rail-label" />
         <button type="button" className="rail-item rail-signout" onClick={signOut}>
           <SignOutIcon />
           <span className="rail-label">Sair</span>

@@ -55,8 +55,10 @@ npm run lint    # oxlint
   flyout no hover/foco) e uma faixa anil no topo sobre a qual cada página abre
   com um cabeçalho próprio (`PageHeader`: título + saudação com a data, ou
   status no detalhe). Abaixo de 640px o mesmo rail vira barra superior.
-- **Tema escuro automático**: segue `prefers-color-scheme` do sistema, sem
-  seletor manual; os dois temas saem dos mesmos tokens.
+- **Tema claro/escuro**: segue `prefers-color-scheme` do sistema por padrão; o
+  botão de alternância (rail e telas de login/cadastro) persiste a escolha em
+  `localStorage` e um script no `<head>` a aplica antes da primeira pintura.
+  Os dois temas saem dos mesmos tokens.
 - **Mobile (<1024px)**: o quadro vira abas de status (filtros) com lista única.
 - **Formulários com react-hook-form**: validação no blur e os erros de
   validação da API (`errors[]` do ProblemDetail) voltam para o campo exato.

@@ -351,7 +351,7 @@ validação de todos os DTOs, unidades (`Order`, `OrderItem`, `OrderMapper`, `To
 pedidos, persistência (inclusive lock otimista), segurança (inclusive CORS) e OpenAPI sobre
 SQLite em arquivo temporário.
 
-**Web — 95 testes** (`cd web && npm test`), 12 deles fluxos de UI (login, criação de pedido e
+**Web — 101 testes** (`cd web && npm test`), 13 deles fluxos de UI (login, criação de pedido e
 mudança de status contra uma API falsa), além de dinheiro em centavos (incluindo os casos em que
 um round-trip por float perderia um centavo), máscara/strip de CEP, a consulta ao ViaCEP
 (inclusive CEP inexistente, falha de rede e requisição cancelada), e o cliente HTTP contra

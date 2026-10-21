@@ -135,8 +135,59 @@
     }
   }
 
+  :root[data-theme="light"] {
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0c1121;
+    --band: #18234d;
+    --band-ink: #e6e9f4;
+    --surface: #151c31;
+    --surface-dim: #1b2339;
+    --surface-sunken: #242b44;
+    --ink: #e6e9f4;
+    --ink-soft: #a1a9c2;
+    --line: #2a3354;
+    --line-strong: #69739a;
+    --primary: #8fa5ff;
+    --primary-hover: #a9baff;
+    --primary-ink: #0c1121;
+    --accent: #ff9a6b;
+    --focus: #ffb08a;
+    --brand-on-band: var(--accent);
+    --ticket-ink: var(--band);
+    --danger: #ff8a7a;
+    --danger-ink: #0c1121;
+    --danger-bg: #3a1a1f;
+    --info-bg: #1c2550;
+    --card-border: #2a3354;
+
+    --st-recebido-ink: #a3b5ff;
+    --st-recebido-bg: #1c2550;
+    --st-recebido-bar: #a3b5ff;
+    --st-em-preparo-ink: #f2c260;
+    --st-em-preparo-bg: #2e2610;
+    --st-em-preparo-bar: #f2c260;
+    --st-saiu-ink: #cdb0ff;
+    --st-saiu-bg: #2a1f48;
+    --st-saiu-bar: #cdb0ff;
+    --st-entregue-ink: #7bd8a0;
+    --st-entregue-bg: #12301f;
+    --st-entregue-bar: #7bd8a0;
+    --st-cancelado-ink: #aeb4c6;
+    --st-cancelado-bg: #242a3c;
+    --st-cancelado-bar: #7f879c;
+
+    --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
+    --shadow-md: 0 6px 20px rgb(0 0 0 / 0.45);
+    --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.55);
+  }
+
   @media (prefers-color-scheme: dark) {
-    :root {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
       --bg: #0c1121;
       --band: #18234d;
       --band-ink: #e6e9f4;

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "../auth/useAuth";
+import { ThemeToggle } from "../components/ThemeToggle";
 import { AuthBand } from "./AuthBand";
 import { isPasswordWithinLimit } from "./passwordBytes";
 import type { RegisterForm } from "./registerErrors";
@@ -28,6 +29,7 @@ export default function RegisterPage() {
     <div className="auth-page">
       <AuthBand />
       <main className="auth-card card">
+        <ThemeToggle className="auth-theme-toggle" labelClassName="visually-hidden" />
         <p className="auth-sub">Crie sua conta para registrar pedidos.</p>
 
         {formError && (

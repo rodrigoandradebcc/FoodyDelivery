@@ -8,6 +8,7 @@ import "./index.css";
 import { ApiError } from "./api/http";
 import App from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
+import { ThemeProvider } from "./theme/ThemeProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,12 +28,14 @@ if (!rootEl) {
 
 createRoot(rootEl).render(
   <StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <App />
-        </QueryClientProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <App />
+          </QueryClientProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   </StrictMode>,
 );
