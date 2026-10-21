@@ -1,4 +1,9 @@
+html:has(.neworder) {
+  scroll-padding-bottom: 8rem;
+}
+
 .neworder {
+  --tear-bg: var(--bg);
   display: flex;
   flex-direction: column;
   gap: var(--sp-4);
@@ -6,10 +11,10 @@
   margin: 0 auto;
 }
 
-.no-head {
-  display: flex;
-  flex-direction: column;
-  gap: var(--sp-1);
+.neworder input,
+.neworder select,
+.neworder button {
+  scroll-margin-bottom: 8rem;
 }
 
 .no-lede {
@@ -38,6 +43,22 @@
   color: var(--ink);
   border-bottom: 1px solid var(--line);
   padding-bottom: var(--sp-2);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.no-step {
+  display: inline-grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--r-pill);
+  background: var(--info-bg);
+  color: var(--primary);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 700;
 }
 
 .no-section > legend + * {
@@ -80,6 +101,7 @@
 .no-item-add {
   align-self: start;
   border: 1px dashed var(--line-strong);
+  background: transparent;
 }
 
 .no-addr-grid {
@@ -130,6 +152,11 @@
   box-shadow: var(--shadow-md);
 }
 
+.no-footer-title,
+.no-tear {
+  display: none;
+}
+
 .no-total-block {
   display: flex;
   flex-direction: column;
@@ -145,6 +172,47 @@
 .no-total {
   font-size: var(--text-xl);
   letter-spacing: -0.02em;
+}
+
+@media (min-width: 1180px) {
+  .neworder {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 20rem;
+    column-gap: var(--sp-6);
+    row-gap: 0;
+    max-width: 72rem;
+    align-items: start;
+  }
+  .neworder > :not(.no-footer) {
+    grid-column: 1;
+    margin-bottom: var(--sp-4);
+  }
+  .no-footer {
+    grid-column: 2;
+    grid-row: 1 / span 6;
+    top: var(--sp-5);
+    bottom: auto;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: var(--sp-3);
+    padding: var(--sp-5);
+    border-color: var(--card-border);
+    box-shadow: var(--shadow-sm);
+  }
+  .no-footer-title {
+    display: block;
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-weight: 600;
+  }
+  .no-tear {
+    display: block;
+    margin-inline: calc(var(--sp-5) * -1);
+  }
+  .no-submit {
+    width: 100%;
+  }
 }
 
 @media (max-width: 639px) {

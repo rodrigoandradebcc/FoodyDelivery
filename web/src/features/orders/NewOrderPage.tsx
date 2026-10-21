@@ -15,6 +15,7 @@ import { createOrder } from "../../api/orders";
 import type { CreateOrderRequest } from "../../api/types";
 import { CepNotFoundError, lookupCep } from "../../api/viacep";
 import { maskCep, stripCep } from "../../lib/cep";
+import PageHeader from "../../components/PageHeader";
 import { formatCentsBRL } from "../../lib/money";
 import {
   parsePriceCents,
@@ -218,16 +219,18 @@ export default function NewOrderPage() {
 
   return (
     <form className="neworder" onSubmit={handleSubmit(onSubmit)} noValidate>
-      <header className="no-head">
-        <Link to="/" className="back-link">
-          Voltar ao quadro
-        </Link>
-        <h1>Novo pedido</h1>
-        <p className="no-lede">
-          Preços em reais, como você digitaria na comanda — "45,90". O total é calculado
-          enquanto você escreve.
-        </p>
-      </header>
+      <PageHeader
+        title="Novo pedido"
+        eyebrow={
+          <Link className="back-link" to="/">
+            Voltar ao quadro
+          </Link>
+        }
+      />
+      <p className="no-lede">
+        Preços em reais, como você digitaria na comanda — "45,90". O total é calculado
+        enquanto você escreve.
+      </p>
 
       {formError && (
         <p className="alert" role="alert">
@@ -252,7 +255,10 @@ export default function NewOrderPage() {
       </div>
 
       <fieldset className="no-section card">
-        <legend>Itens</legend>
+        <legend>
+          <span className="no-step" aria-hidden="true">1</span>
+          Itens
+        </legend>
         {errors.items?.root && (
           <span className="field-error" role="alert">{errors.items.root.message}</span>
         )}
@@ -325,7 +331,7 @@ export default function NewOrderPage() {
         })}
         <button
           type="button"
-          className="btn btn-sm btn-ghost no-item-add"
+          className="btn btn-ghost no-item-add"
           disabled={fields.length >= 100}
           onClick={() => append({ ...EMPTY_ITEM })}
         >
@@ -335,7 +341,10 @@ export default function NewOrderPage() {
       </fieldset>
 
       <fieldset className="no-section card">
-        <legend>Endereço de entrega</legend>
+        <legend>
+          <span className="no-step" aria-hidden="true">2</span>
+          Endereço de entrega
+        </legend>
         {addressErrors?.root && (
           <span className="field-error" role="alert">{addressErrors.root.message}</span>
         )}
@@ -487,8 +496,10 @@ export default function NewOrderPage() {
       </fieldset>
 
       <div className="no-footer">
+        <span className="no-footer-title" aria-hidden="true">Comanda</span>
         <LiveTotal control={control} />
-        <button type="submit" className="btn btn-primary" disabled={mutation.isPending}>
+        <div className="tear no-tear" aria-hidden="true" />
+        <button type="submit" className="btn btn-primary btn-pill btn-lg no-submit" disabled={mutation.isPending}>
           {mutation.isPending ? "Enviando…" : "Criar pedido"}
         </button>
       </div>
