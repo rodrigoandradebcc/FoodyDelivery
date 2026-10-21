@@ -57,7 +57,7 @@
   display: grid;
   place-items: center;
   background: var(--accent);
-  color: #fff;
+  color: var(--primary-ink);
   font: 700 1.1rem var(--font-display);
   font-variation-settings: "SOFT" 100;
 }

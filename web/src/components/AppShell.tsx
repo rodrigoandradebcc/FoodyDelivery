@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, Outlet } from "react-router";
+import { Link, NavLink, Outlet } from "react-router";
 import { useAuth } from "../auth/auth";
 import "./appshell.css";
 
@@ -38,14 +38,14 @@ export default function AppShell() {
         Pular para o conteúdo
       </a>
       <aside className="rail">
-        <NavLink to="/" end className="rail-brand" aria-label="Foody — quadro de pedidos">
+        <Link to="/" className="rail-brand" aria-label="Foody — quadro de pedidos">
           <span className="rail-mark" aria-hidden="true">
             F
           </span>
           <span className="rail-brand-name display" aria-hidden="true">
             Foody<span className="rail-brand-dot">.</span>
           </span>
-        </NavLink>
+        </Link>
         <button
           type="button"
           className="rail-toggle"
