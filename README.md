@@ -15,11 +15,36 @@ frontend React que mostra os pedidos por status e permite criar novos.
 Este README documenta a API e o projeto como um todo; o front tem o seu em
 [`web/README.md`](web/README.md).
 
-**Índice:** [Requisitos do desafio](#requisitos-do-desafio-e-onde-cada-um-está) ·
+**Índice:** [Telas](#telas) · [Requisitos do desafio](#requisitos-do-desafio-e-onde-cada-um-está) ·
 [Como rodar](#como-rodar) · [Swagger](#swagger) · [Endpoints](#endpoints) ·
 [Máquina de estados](#máquina-de-estados) · [Fluxo completo (curl)](#fluxo-completo-curl) ·
 [Decisões e porquês](#decisões-e-porquês) · [Estrutura](#estrutura) · [Testes](#testes) ·
 [Limitações assumidas](#limitações-assumidas)
+
+---
+
+## Telas
+
+Capturas no navegador em 1440×900 (desktop) e 390×844 (celular). O tema segue o sistema e
+pode ser trocado pelo botão de sol/lua. Todas as capturas, nos temas claro e escuro, estão em
+[`docs/screenshots/`](docs/screenshots/).
+
+### Desktop
+
+| Quadro de pedidos | Novo pedido |
+|---|---|
+| ![Quadro de pedidos](docs/screenshots/desktop-3-quadro-light.png) | ![Novo pedido preenchido](docs/screenshots/desktop-6-novo-pedido-preenchido-light.png) |
+| **Detalhe do pedido** | **Login** |
+| ![Detalhe do pedido](docs/screenshots/desktop-7-detalhe-light.png) | ![Login](docs/screenshots/desktop-1-login-light.png) |
+| **Quadro no tema escuro** | **Validação do formulário** |
+| ![Quadro no tema escuro](docs/screenshots/desktop-3-quadro-dark.png) | ![Validação do formulário](docs/screenshots/desktop-5-novo-pedido-validacao-light.png) |
+
+### Celular
+
+| Quadro | Novo pedido | Detalhe | Login |
+|---|---|---|---|
+| <img src="docs/screenshots/mobile-3-quadro-light.png" alt="Quadro no celular" width="200"> | <img src="docs/screenshots/mobile-6-novo-pedido-preenchido-light.png" alt="Novo pedido no celular" width="200"> | <img src="docs/screenshots/mobile-7-detalhe-light.png" alt="Detalhe no celular" width="200"> | <img src="docs/screenshots/mobile-1-login-light.png" alt="Login no celular" width="200"> |
+| <img src="docs/screenshots/mobile-3-quadro-dark.png" alt="Quadro no celular, tema escuro" width="200"> | <img src="docs/screenshots/mobile-6-novo-pedido-preenchido-dark-rolado.png" alt="Novo pedido no celular, tema escuro" width="200"> | <img src="docs/screenshots/mobile-7-detalhe-dark.png" alt="Detalhe no celular, tema escuro" width="200"> | <img src="docs/screenshots/mobile-2-cadastro-dark.png" alt="Cadastro no celular, tema escuro" width="200"> |
 
 ---
 
