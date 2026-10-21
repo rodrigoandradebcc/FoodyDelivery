@@ -1,17 +1,15 @@
 import { useState } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
-import { Link, Navigate, useNavigate } from "react-router";
-import { register as apiRegister } from "../api/auth";
+import { useForm } from "react-hook-form";
+import { Link, Navigate } from "react-router";
 import { useAuth } from "../auth/useAuth";
 import AuthBand from "./AuthBand";
-import { registerErrorTargets, type RegisterForm } from "./registerErrors";
+import { isPasswordWithinLimit } from "./passwordBytes";
+import type { RegisterForm } from "./registerErrors";
+import { useRegisterSubmit } from "./useRegisterSubmit";
 import "./auth.css";
 
-const encoder = new TextEncoder();
-
 export default function RegisterPage() {
-  const { isAuthenticated, signIn } = useAuth();
-  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [showPw, setShowPw] = useState(false);
   const {
     register,
@@ -20,24 +18,9 @@ export default function RegisterPage() {
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>({ mode: "onBlur" });
 
-  if (isAuthenticated) return <Navigate to="/" replace />;
+  const onSubmit = useRegisterSubmit(setError);
 
-  const onSubmit: SubmitHandler<RegisterForm> = async ({ name, email, password }) => {
-    const cleanEmail = email.trim();
-    try {
-      await apiRegister({ name: name.trim(), email: cleanEmail, password });
-      await signIn(cleanEmail, password);
-      navigate("/", { replace: true });
-    } catch (err) {
-      for (const target of registerErrorTargets(err)) {
-        if (target.kind === "field") {
-          setError(target.field, { message: target.message }, { shouldFocus: target.focus });
-        } else {
-          setError("root.serverError", { message: target.message });
-        }
-      }
-    }
-  };
+  if (isAuthenticated) return <Navigate to="/" replace />;
 
   const formError = errors.root?.serverError?.message;
 
@@ -107,7 +90,7 @@ export default function RegisterPage() {
                     message: "A senha precisa de pelo menos 8 caracteres.",
                   },
                   validate: (value) =>
-                    (value.length <= 72 && encoder.encode(value).length <= 72) ||
+                    isPasswordWithinLimit(value) ||
                     "Senha muito longa (máximo de 72 caracteres/bytes).",
                 })}
               />

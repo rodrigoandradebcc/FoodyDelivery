@@ -1,20 +1,14 @@
 import { useState } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
-import { Link, Navigate, useLocation, useNavigate } from "react-router";
+import { useForm } from "react-hook-form";
+import { Link, Navigate } from "react-router";
 import { useAuth } from "../auth/useAuth";
 import AuthBand from "./AuthBand";
-import { loginErrorMessage } from "./loginErrorMessage";
+import type { LoginForm } from "./loginForm";
+import { useLoginSubmit } from "./useLoginSubmit";
 import "./auth.css";
 
-interface LoginForm {
-  email: string;
-  password: string;
-}
-
 export default function LoginPage() {
-  const { isAuthenticated, sessionExpired, signIn } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { isAuthenticated, sessionExpired } = useAuth();
   const [showPw, setShowPw] = useState(false);
   const {
     register,
@@ -23,18 +17,9 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({ mode: "onBlur" });
 
-  const from = (location.state as { from?: string } | null)?.from ?? "/";
+  const { from, onSubmit } = useLoginSubmit(setError);
 
   if (isAuthenticated) return <Navigate to={from} replace />;
-
-  const onSubmit: SubmitHandler<LoginForm> = async ({ email, password }) => {
-    try {
-      await signIn(email, password);
-      navigate(from, { replace: true });
-    } catch (err) {
-      setError("root.serverError", { message: loginErrorMessage(err) });
-    }
-  };
 
   const formError = errors.root?.serverError?.message;
 
