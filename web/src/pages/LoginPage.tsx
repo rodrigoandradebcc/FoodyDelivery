@@ -47,7 +47,7 @@ export default function LoginPage() {
       <aside className="auth-band">
         <h1 className="auth-brand">
           <span className="auth-ticket" aria-hidden="true">F</span>
-          Foody<span className="auth-dot">.</span>
+          <span>Foody<span className="auth-dot">.</span></span>
         </h1>
         <p className="auth-tagline display">O balcão inteiro num quadro só.</p>
         <div className="auth-mini" aria-hidden="true">

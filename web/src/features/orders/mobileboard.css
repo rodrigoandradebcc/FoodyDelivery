@@ -5,6 +5,10 @@
   min-width: 0;
 }
 
+html:has(.shell .mtabs) {
+  scroll-padding-top: calc(3.25rem + var(--sp-2));
+}
+
 .mtabs {
   display: flex;
   gap: var(--sp-2);
@@ -33,7 +37,7 @@
   min-height: 44px;
   padding: 0 var(--sp-3);
   white-space: nowrap;
-  border: 1px solid var(--line);
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-pill);
   background: var(--surface);
   cursor: pointer;
@@ -83,5 +87,11 @@
 @media (min-width: 640px) and (max-width: 1023px) {
   .mtabs {
     top: 0;
+  }
+}
+
+@media (max-width: 639.98px) {
+  html:has(.shell .mtabs) {
+    scroll-padding-top: calc(var(--topbar-h) + 3.25rem + var(--sp-2));
   }
 }
