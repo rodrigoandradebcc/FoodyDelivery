@@ -1,19 +1,14 @@
 import { useState } from "react";
 import { useForm, type SubmitHandler } from "react-hook-form";
 import { Link, Navigate, useLocation, useNavigate } from "react-router";
-import { ApiError } from "../api/http";
-import { useAuth } from "../auth/auth";
+import { useAuth } from "../auth/useAuth";
 import AuthBand from "./AuthBand";
+import { loginErrorMessage } from "./loginErrorMessage";
 import "./auth.css";
 
 interface LoginForm {
   email: string;
   password: string;
-}
-
-function loginErrorMessage(err: unknown): string {
-  if (err instanceof ApiError && err.status === 401) return "E-mail ou senha incorretos.";
-  return err instanceof Error ? err.message : "Erro inesperado.";
 }
 
 export default function LoginPage() {

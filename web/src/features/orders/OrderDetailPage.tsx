@@ -1,24 +1,20 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Link, useParams } from "react-router";
 import PageHeader from "../../components/PageHeader";
 import { ApiError } from "../../api/http";
-import { getOrder } from "../../api/orders";
 import { maskCep } from "../../lib/cep";
 import { formatCentsBRL } from "../../lib/money";
 import { formatLocalDateTime } from "../../lib/time";
+import { statusErrorMessage } from "./orderText";
 import { STATUS_META } from "./statusMeta";
 import { StatusActions } from "./StatusActions";
+import { useOrderDetail } from "./useOrderDetail";
 import "./orderdetail.css";
 
 export default function OrderDetailPage() {
   const { id } = useParams();
   const [mutationError, setMutationError] = useState<string | null>(null);
-  const query = useQuery({
-    queryKey: ["orders", "detail", id],
-    queryFn: () => getOrder(id ?? ""),
-    enabled: Boolean(id),
-  });
+  const query = useOrderDetail(id);
   const order = query.data;
 
   if (query.isPending) {
@@ -110,9 +106,7 @@ export default function OrderDetailPage() {
           <StatusActions
             order={order}
             onChangeStart={() => setMutationError(null)}
-            onError={(error) => setMutationError(
-              error.status === 409 ? "Transição inválida — o pedido foi atualizado." : error.message,
-            )}
+            onError={(error) => setMutationError(statusErrorMessage(error, "pedido"))}
           />
         </section>
       </div>

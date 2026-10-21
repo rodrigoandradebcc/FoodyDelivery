@@ -4,6 +4,7 @@ import EyeIcon from "../../components/icons/EyeIcon";
 import { maskCep } from "../../lib/cep";
 import { formatCentsBRL } from "../../lib/money";
 import { formatLocalDateTime, formatRelative } from "../../lib/time";
+import { extraItemsLabel, statusErrorMessage } from "./orderText";
 import { StatusActions } from "./StatusActions";
 import "./ordercard.css";
 
@@ -35,7 +36,7 @@ export function OrderCard({
           {rest.length > 0 && (
             <span className="order-more">
               {" "}
-              +{rest.length} {rest.length === 1 ? "item" : "itens"}
+              {extraItemsLabel(rest.length)}
             </span>
           )}
         </p>
@@ -82,7 +83,7 @@ export function OrderCard({
           <StatusActions
             order={order}
             compact
-            onError={(e) => notify(e.status === 409 ? "Transição inválida — o quadro foi atualizado." : e.message)}
+            onError={(e) => notify(statusErrorMessage(e, "quadro"))}
           />
         </div>
         <div className="order-row">
