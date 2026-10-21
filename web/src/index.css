@@ -128,7 +128,6 @@
     --z-toast: 1000;
   }
 
-
   :root[data-theme="light"] {
     color-scheme: light;
   }
