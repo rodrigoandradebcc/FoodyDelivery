@@ -21,12 +21,10 @@ function icon(path: ReactElement) {
 
 export const STATUS_META: Record<
   OrderStatus,
-  { label: string; ink: string; bg: string; icon: ReactElement }
+  { label: string; icon: ReactElement }
 > = {
   RECEBIDO: {
     label: "Recebido",
-    ink: "var(--st-recebido-ink)",
-    bg: "var(--st-recebido-bg)",
     icon: icon(
       <>
         <path d="M2 9h3l2 2.5h2L11 9h3" />
@@ -36,8 +34,6 @@ export const STATUS_META: Record<
   },
   EM_PREPARO: {
     label: "Em preparo",
-    ink: "var(--st-em-preparo-ink)",
-    bg: "var(--st-em-preparo-bg)",
     icon: icon(
       <>
         <path d="M8 2c1.8 1.6 2.6 3 2.6 4.4A2.6 2.6 0 0 1 8 9a2.6 2.6 0 0 1-2.6-2.6C5.4 5 6.2 3.6 8 2Z" />
@@ -47,8 +43,6 @@ export const STATUS_META: Record<
   },
   SAIU_PARA_ENTREGA: {
     label: "Saiu para entrega",
-    ink: "var(--st-saiu-ink)",
-    bg: "var(--st-saiu-bg)",
     icon: icon(
       <>
         <circle cx="4.5" cy="11.5" r="2" />
@@ -59,8 +53,6 @@ export const STATUS_META: Record<
   },
   ENTREGUE: {
     label: "Entregue",
-    ink: "var(--st-entregue-ink)",
-    bg: "var(--st-entregue-bg)",
     icon: icon(
       <>
         <circle cx="8" cy="8" r="6" />
@@ -70,8 +62,6 @@ export const STATUS_META: Record<
   },
   CANCELADO: {
     label: "Cancelado",
-    ink: "var(--st-cancelado-ink)",
-    bg: "var(--st-cancelado-bg)",
     icon: icon(
       <>
         <circle cx="8" cy="8" r="6" />
