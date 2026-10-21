@@ -24,7 +24,7 @@ export default function OrderDetailPage() {
   if (query.isPending) {
     return (
       <div className="detail-state">
-        <PageHeader title="Carregando pedido…" />
+        <PageHeader title="Pedido" />
         <p className="visually-hidden" role="status">
           Carregando pedido…
         </p>

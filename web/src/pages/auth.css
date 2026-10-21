@@ -11,15 +11,6 @@
   height: 9rem;
   padding: var(--sp-5) var(--gutter) 0;
   flex-shrink: 0;
-  --brand-on-band: #ff9a6b;
-  --ticket-ink: #fff;
-}
-
-@media (prefers-color-scheme: dark) {
-  .auth-band {
-    --brand-on-band: var(--accent);
-    --ticket-ink: var(--band);
-  }
 }
 
 .auth-brand {
