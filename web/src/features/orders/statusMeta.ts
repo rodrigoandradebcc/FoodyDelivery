@@ -1,23 +1,10 @@
-import type { ReactElement } from "react";
+import { createElement, type ReactElement } from "react";
 import type { OrderStatus } from "../../api/types";
-
-function icon(path: ReactElement) {
-  return (
-    <svg
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.75"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      {path}
-    </svg>
-  );
-}
+import { RecebidoIcon } from "../../components/icons/RecebidoIcon";
+import { EmPreparoIcon } from "../../components/icons/EmPreparoIcon";
+import { SaiuParaEntregaIcon } from "../../components/icons/SaiuParaEntregaIcon";
+import { EntregueIcon } from "../../components/icons/EntregueIcon";
+import { CanceladoIcon } from "../../components/icons/CanceladoIcon";
 
 export const STATUS_META: Record<
   OrderStatus,
@@ -25,49 +12,23 @@ export const STATUS_META: Record<
 > = {
   RECEBIDO: {
     label: "Recebido",
-    icon: icon(
-      <>
-        <path d="M2 9h3l2 2.5h2L11 9h3" />
-        <path d="M2 9V4.5A1.5 1.5 0 0 1 3.5 3h9A1.5 1.5 0 0 1 14 4.5V9v3a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9Z" />
-      </>,
-    ),
+    icon: createElement(RecebidoIcon),
   },
   EM_PREPARO: {
     label: "Em preparo",
-    icon: icon(
-      <>
-        <path d="M8 2c1.8 1.6 2.6 3 2.6 4.4A2.6 2.6 0 0 1 8 9a2.6 2.6 0 0 1-2.6-2.6C5.4 5 6.2 3.6 8 2Z" />
-        <path d="M4 12.5h8M5 12.5V14M11 12.5V14" />
-      </>,
-    ),
+    icon: createElement(EmPreparoIcon),
   },
   SAIU_PARA_ENTREGA: {
     label: "Saiu para entrega",
-    icon: icon(
-      <>
-        <circle cx="4.5" cy="11.5" r="2" />
-        <circle cx="11.5" cy="11.5" r="2" />
-        <path d="M4.5 11.5 7 6h3l1.5 5.5M7 6H5.5" />
-      </>,
-    ),
+    icon: createElement(SaiuParaEntregaIcon),
   },
   ENTREGUE: {
     label: "Entregue",
-    icon: icon(
-      <>
-        <circle cx="8" cy="8" r="6" />
-        <path d="m5.5 8 1.8 1.8L10.8 6.2" />
-      </>,
-    ),
+    icon: createElement(EntregueIcon),
   },
   CANCELADO: {
     label: "Cancelado",
-    icon: icon(
-      <>
-        <circle cx="8" cy="8" r="6" />
-        <path d="m6 6 4 4M10 6l-4 4" />
-      </>,
-    ),
+    icon: createElement(CanceladoIcon),
   },
 };
 
