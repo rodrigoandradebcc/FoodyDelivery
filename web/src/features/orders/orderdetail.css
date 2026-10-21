@@ -138,7 +138,7 @@
   }
 }
 
-@media (max-width: 639px) {
+@media (max-width: 639.98px) {
   .detail-section,
   .detail-state-content {
     padding: var(--sp-4);
