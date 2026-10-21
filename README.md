@@ -42,18 +42,22 @@ Cada linha aponta o arquivo principal e como conferir aquele requisito rodando o
 | Buscar um pedido por ID | `OrderController.getById` | `GET /api/v1/orders/{id}` |
 | Persistência em SQLite | `data/foody.db`, migrations em `src/main/resources/db/migration/` | o arquivo nasce sozinho na primeira execução |
 
-Uma observação sobre **"cliente"**: o pedido pertence ao usuário autenticado que o criou —
-é o `user_id` gravado a partir do token, não um campo do corpo da requisição. Assim não há
-como um cliente criar pedido em nome de outro. A API também não devolve o cliente nas
-respostas de pedido, porque nenhuma tela precisa dele.
+Uma observação sobre **"cliente"**: o pedido tem `customerName`, o nome de quem recebe a
+entrega (1 a 120 caracteres após remover espaços nas pontas), enviado no corpo e devolvido em
+todas as respostas de pedido. Quem *registrou* o pedido é outra coisa: o `user_id`, gravado a
+partir do token e nunca aceito do corpo da requisição.
 
 ### Front-end
 
 | Requisito | Onde está | Como verificar |
 |---|---|---|
 | Aplicação em React | `web/` (React 19 + TypeScript + Vite) | `cd web && npm run dev` |
-| Lista os pedidos com seus status atuais | `web/src/features/orders/BoardPage.tsx` e `Column.tsx` | a tela inicial: uma coluna por etapa |
+| Cadastro e login | `web/src/pages/RegisterPage.tsx`, `LoginPage.tsx` | telas "Crie sua conta" e "Entrar" |
+| Apenas usuários autenticados acessam | `web/src/auth/RequireAuth.tsx` | abrir `/` sem sessão leva ao login; após entrar, volta à rota pedida |
+| Lista os pedidos com seus status atuais | `web/src/features/orders/BoardPage.tsx` e `Column.tsx` | a tela inicial: uma coluna por status, com "Carregar mais" quando há outra página |
 | Permite criar um novo pedido | `web/src/features/orders/NewOrderPage.tsx` | botão "Novo pedido" na barra do quadro |
+| Atualiza o status do pedido | `web/src/features/orders/StatusActions.tsx` | botões do card e do detalhe; cancelar pede confirmação |
+| Busca um pedido por ID | `web/src/features/orders/OrderDetailPage.tsx` | clique no nome do cliente ou no ícone de olho (`/orders/:id`) |
 
 ### Versionamento
 
