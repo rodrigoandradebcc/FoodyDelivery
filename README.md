@@ -15,11 +15,36 @@ frontend React que mostra os pedidos por status e permite criar novos.
 Este README documenta a API e o projeto como um todo; o front tem o seu em
 [`web/README.md`](web/README.md).
 
-**Índice:** [Requisitos do desafio](#requisitos-do-desafio-e-onde-cada-um-está) ·
+**Índice:** [Telas](#telas) · [Requisitos do desafio](#requisitos-do-desafio-e-onde-cada-um-está) ·
 [Como rodar](#como-rodar) · [Swagger](#swagger) · [Endpoints](#endpoints) ·
 [Máquina de estados](#máquina-de-estados) · [Fluxo completo (curl)](#fluxo-completo-curl) ·
 [Decisões e porquês](#decisões-e-porquês) · [Estrutura](#estrutura) · [Testes](#testes) ·
 [Limitações assumidas](#limitações-assumidas)
+
+---
+
+## Telas
+
+Capturas no navegador em 1440×900 (desktop) e 390×844 (celular). O tema segue o sistema e
+pode ser trocado pelo botão de sol/lua. Todas as capturas, nos temas claro e escuro, estão em
+[`docs/screenshots/`](docs/screenshots/).
+
+### Desktop
+
+| Quadro de pedidos | Novo pedido |
+|---|---|
+| ![Quadro de pedidos](docs/screenshots/desktop-3-quadro-light.png) | ![Novo pedido preenchido](docs/screenshots/desktop-6-novo-pedido-preenchido-light.png) |
+| **Detalhe do pedido** | **Login** |
+| ![Detalhe do pedido](docs/screenshots/desktop-7-detalhe-light.png) | ![Login](docs/screenshots/desktop-1-login-light.png) |
+| **Quadro no tema escuro** | **Validação do formulário** |
+| ![Quadro no tema escuro](docs/screenshots/desktop-3-quadro-dark.png) | ![Validação do formulário](docs/screenshots/desktop-5-novo-pedido-validacao-light.png) |
+
+### Celular
+
+| Quadro | Novo pedido | Detalhe | Login |
+|---|---|---|---|
+| <img src="docs/screenshots/mobile-3-quadro-light.png" alt="Quadro no celular" width="200"> | <img src="docs/screenshots/mobile-6-novo-pedido-preenchido-light.png" alt="Novo pedido no celular" width="200"> | <img src="docs/screenshots/mobile-7-detalhe-light.png" alt="Detalhe no celular" width="200"> | <img src="docs/screenshots/mobile-1-login-light.png" alt="Login no celular" width="200"> |
+| <img src="docs/screenshots/mobile-3-quadro-dark.png" alt="Quadro no celular, tema escuro" width="200"> | <img src="docs/screenshots/mobile-6-novo-pedido-preenchido-dark.png" alt="Novo pedido no celular, tema escuro" width="200"> | <img src="docs/screenshots/mobile-7-detalhe-dark.png" alt="Detalhe no celular, tema escuro" width="200"> | <img src="docs/screenshots/mobile-2-cadastro-dark.png" alt="Cadastro no celular, tema escuro" width="200"> |
 
 ---
 
@@ -42,18 +67,22 @@ Cada linha aponta o arquivo principal e como conferir aquele requisito rodando o
 | Buscar um pedido por ID | `OrderController.getById` | `GET /api/v1/orders/{id}` |
 | Persistência em SQLite | `data/foody.db`, migrations em `src/main/resources/db/migration/` | o arquivo nasce sozinho na primeira execução |
 
-Uma observação sobre **"cliente"**: o pedido pertence ao usuário autenticado que o criou —
-é o `user_id` gravado a partir do token, não um campo do corpo da requisição. Assim não há
-como um cliente criar pedido em nome de outro. A API também não devolve o cliente nas
-respostas de pedido, porque nenhuma tela precisa dele.
+Uma observação sobre **"cliente"**: o pedido tem `customerName`, o nome de quem recebe a
+entrega (1 a 120 caracteres após remover espaços nas pontas), enviado no corpo e devolvido em
+todas as respostas de pedido. Quem *registrou* o pedido é outra coisa: o `user_id`, gravado a
+partir do token e nunca aceito do corpo da requisição.
 
 ### Front-end
 
 | Requisito | Onde está | Como verificar |
 |---|---|---|
 | Aplicação em React | `web/` (React 19 + TypeScript + Vite) | `cd web && npm run dev` |
-| Lista os pedidos com seus status atuais | `web/src/features/orders/BoardPage.tsx` e `Column.tsx` | a tela inicial: uma coluna por etapa |
+| Cadastro e login | `web/src/pages/RegisterPage.tsx`, `LoginPage.tsx` | telas "Crie sua conta" e "Entrar" |
+| Apenas usuários autenticados acessam | `web/src/auth/RequireAuth.tsx` | abrir `/` sem sessão leva ao login; após entrar, volta à rota pedida |
+| Lista os pedidos com seus status atuais | `web/src/features/orders/BoardPage.tsx` e `Column.tsx` | a tela inicial: uma coluna por status, com "Carregar mais" quando há outra página |
 | Permite criar um novo pedido | `web/src/features/orders/NewOrderPage.tsx` | botão "Novo pedido" na barra do quadro |
+| Atualiza o status do pedido | `web/src/features/orders/StatusActions.tsx` | botões do card e do detalhe; cancelar pede confirmação |
+| Busca um pedido por ID | `web/src/features/orders/OrderDetailPage.tsx` | clique no nome do cliente ou no ícone de olho (`/orders/:id`) |
 
 ### Versionamento
 
@@ -351,8 +380,8 @@ validação de todos os DTOs, unidades (`Order`, `OrderItem`, `OrderMapper`, `To
 pedidos, persistência (inclusive lock otimista), segurança (inclusive CORS) e OpenAPI sobre
 SQLite em arquivo temporário.
 
-**Web — 101 testes** (`cd web && npm test`), 13 deles fluxos de UI (login, criação de pedido e
-mudança de status contra uma API falsa), além de dinheiro em centavos (incluindo os casos em que
+**Web — 105 testes** (`cd web && npm test`), 17 deles fluxos de UI (cadastro, login, proteção de
+rota, criação de pedido, mudança de status e tema, contra uma API falsa), além de dinheiro em centavos (incluindo os casos em que
 um round-trip por float perderia um centavo), máscara/strip de CEP, a consulta ao ViaCEP
 (inclusive CEP inexistente, falha de rede e requisição cancelada), e o cliente HTTP contra
 as duas formas de 401 da API (filtro do Spring Security com ProblemDetail × ProblemDetail de

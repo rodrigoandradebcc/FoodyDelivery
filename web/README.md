@@ -59,7 +59,10 @@ npm run lint    # oxlint
   botão de alternância (rail e telas de login/cadastro) persiste a escolha em
   `localStorage` e um script no `<head>` a aplica antes da primeira pintura.
   Os dois temas saem dos mesmos tokens.
-- **Mobile (<1024px)**: o quadro vira abas de status (filtros) com lista única.
+- **Quadro desktop**: as 5 colunas cabem lado a lado a partir de ~1250px de
+  largura; abaixo disso só o quadro rola na horizontal (barra fina), nunca a página.
+- **Mobile (<1024px)**: o quadro vira abas de status com uma lista única; as abas
+  quebram em linhas, então todo status fica visível sem rolagem lateral.
 - **Formulários com react-hook-form**: validação no blur e os erros de
   validação da API (`errors[]` do ProblemDetail) voltam para o campo exato.
 - **CEP** é exibido com máscara (`01310-100`) e enviado como 8 dígitos puros. Ao completar
@@ -67,7 +70,13 @@ npm run lint    # oxlint
   existir ou o serviço não responder, o formulário continua editável à mão.
 - **Sessão**: o token JWT expira em 1h e é invalidado quando o backend
   reinicia; qualquer 401 derruba a sessão para a tela de login com aviso.
+- **Tipografia**: Fraunces (eixo SOFT) nos títulos e Atkinson Hyperlegible Next
+  no texto da interface, escolhida pela leitura à distância no balcão (zeros
+  cortados, `1`/`l`/`I` distintos), ambas self-hosted via Fontsource.
+- **Organização**: um componente React por arquivo; componentes só renderizam, e
+  efeitos, chamadas à API, armazenamento e transformações vivem em hooks
+  (`useX.ts`) ou módulos puros (`*.ts`) com testes.
 - Dependências de runtime: React, react-router, TanStack Query,
-  react-hook-form e duas fontes self-hosted — nada além disso.
+  react-hook-form e as duas fontes — nada além disso.
 
 Os design tokens e as classes compartilhadas vivem em `src/index.css`.
