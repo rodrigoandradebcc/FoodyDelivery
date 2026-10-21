@@ -44,7 +44,7 @@ pode ser trocado pelo botão de sol/lua. Todas as capturas, nos temas claro e es
 | Quadro | Novo pedido | Detalhe | Login |
 |---|---|---|---|
 | <img src="docs/screenshots/mobile-3-quadro-light.png" alt="Quadro no celular" width="200"> | <img src="docs/screenshots/mobile-6-novo-pedido-preenchido-light.png" alt="Novo pedido no celular" width="200"> | <img src="docs/screenshots/mobile-7-detalhe-light.png" alt="Detalhe no celular" width="200"> | <img src="docs/screenshots/mobile-1-login-light.png" alt="Login no celular" width="200"> |
-| <img src="docs/screenshots/mobile-3-quadro-dark.png" alt="Quadro no celular, tema escuro" width="200"> | <img src="docs/screenshots/mobile-6-novo-pedido-preenchido-dark-rolado.png" alt="Novo pedido no celular, tema escuro" width="200"> | <img src="docs/screenshots/mobile-7-detalhe-dark.png" alt="Detalhe no celular, tema escuro" width="200"> | <img src="docs/screenshots/mobile-2-cadastro-dark.png" alt="Cadastro no celular, tema escuro" width="200"> |
+| <img src="docs/screenshots/mobile-3-quadro-dark.png" alt="Quadro no celular, tema escuro" width="200"> | <img src="docs/screenshots/mobile-6-novo-pedido-preenchido-dark.png" alt="Novo pedido no celular, tema escuro" width="200"> | <img src="docs/screenshots/mobile-7-detalhe-dark.png" alt="Detalhe no celular, tema escuro" width="200"> | <img src="docs/screenshots/mobile-2-cadastro-dark.png" alt="Cadastro no celular, tema escuro" width="200"> |
 
 ---
 
