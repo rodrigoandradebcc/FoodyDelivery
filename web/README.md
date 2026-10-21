@@ -18,9 +18,8 @@ npm run dev
 
 Abra <http://localhost:5173>. Entre com a conta de demonstração semeada pelo
 backend (**demo@foody.dev** / **senha1234**) ou crie a sua em "Crie sua conta" —
-o quadro mostra as quatro etapas do pedido; pedidos cancelados ficam na
-bandeja "Cancelados" abaixo do quadro (cancelamento é uma saída do fluxo,
-não uma etapa).
+o quadro mostra as quatro etapas do pedido e, separada por um divisor, a
+coluna "Cancelado" (cancelamento é uma saída do fluxo, não uma etapa).
 
 > **As portas são fixas.** O CORS da API libera exatamente
 > `http://localhost:5173` (dev) e `http://localhost:4173` (preview), e o
@@ -38,7 +37,7 @@ VITE_API_BASE_URL=http://outro-host:8080/api/v1 npm run dev
 ## Testes e build
 
 ```bash
-npm test        # unitários (vitest): dinheiro em centavos, CEP, ViaCEP, cliente HTTP
+npm test        # vitest: unitários e fluxos de UI (login, criação, mudança de status)
 npm run build   # typecheck + build de produção
 npm run preview # serve o build em http://localhost:4173 (origem liberada no CORS)
 npm run lint    # oxlint
@@ -48,9 +47,16 @@ npm run lint    # oxlint
 
 - **Dinheiro é sempre inteiro em centavos** — nenhuma aritmética de ponto
   flutuante toca valores; formatação/parse centralizados em `src/lib/money.ts`.
-- **CANCELADO não é coluna**: o quadro mostra só o pipeline
-  `RECEBIDO → EM_PREPARO → SAIU_PARA_ENTREGA → ENTREGUE`; cancelados ficam
-  numa bandeja recolhível abaixo — cancelar é sair do fluxo.
+- **CANCELADO é a última coluna, fora do pipeline**: o quadro mostra
+  `RECEBIDO → EM_PREPARO → SAIU_PARA_ENTREGA → ENTREGUE` e, depois de um
+  divisor tracejado, a coluna "Cancelado" com cartões esmaecidos — cancelar é
+  sair do fluxo.
+- **Layout "Anil & Páprica"**: um rail lateral (recolhível, com rótulos em
+  flyout no hover/foco) e uma faixa anil no topo sobre a qual cada página abre
+  com um cabeçalho próprio (`PageHeader`: título + saudação com a data, ou
+  status no detalhe). Abaixo de 640px o mesmo rail vira barra superior.
+- **Tema escuro automático**: segue `prefers-color-scheme` do sistema, sem
+  seletor manual; os dois temas saem dos mesmos tokens.
 - **Mobile (<1024px)**: o quadro vira abas de status (filtros) com lista única.
 - **Formulários com react-hook-form**: validação no blur e os erros de
   validação da API (`errors[]` do ProblemDetail) voltam para o campo exato.

@@ -332,9 +332,9 @@ web/src
 ├── api/                cliente HTTP tipado (request, ApiError/ProblemDetail), endpoints
 │                       da API e a consulta de CEP (ViaCEP)
 ├── auth/               AuthProvider, useAuth, RequireAuth
-├── components/         AppShell (header + Outlet)
-├── features/orders/    BoardPage, Column, OrderCard, CanceledTray, MobileBoard,
-│                       NewOrderPage, statusMeta, useOrders
+├── components/         AppShell (rail + faixa + Outlet), PageHeader, ícones
+├── features/orders/    BoardPage, Column, OrderCard, MobileBoard, NewOrderPage,
+│                       OrderDetailPage, StatusActions, statusMeta, useOrders
 ├── lib/                money (centavos inteiros), cep, time, useMediaQuery
 ├── pages/              LoginPage, RegisterPage
 └── index.css           design tokens e classes compartilhadas
@@ -342,7 +342,7 @@ web/src
 
 ## Testes
 
-**API — 212 testes**, todos verdes (`./mvnw test`): a matriz 5×5 completa da máquina de estados,
+**API — 221 testes**, todos verdes (`./mvnw test`): a matriz 5×5 completa da máquina de estados,
 validação de todos os DTOs, unidades (`Order`, `OrderItem`, `OrderMapper`, `TokenService`,
 `OrderService`, `AuthService`, conversor de `Instant`, validador de bytes), fatias
 `@WebMvcTest` dos dois controllers com a segurança real e o serviço mockado, fatias
@@ -350,7 +350,8 @@ validação de todos os DTOs, unidades (`Order`, `OrderItem`, `OrderMapper`, `To
 pedidos, persistência (inclusive lock otimista), segurança (inclusive CORS) e OpenAPI sobre
 SQLite em arquivo temporário.
 
-**Web — 22 testes** (`cd web && npm test`): dinheiro em centavos (incluindo os casos em que
+**Web — 52 testes** (`cd web && npm test`), 12 deles fluxos de UI (login, criação de pedido e
+mudança de status contra uma API falsa), além de dinheiro em centavos (incluindo os casos em que
 um round-trip por float perderia um centavo), máscara/strip de CEP, a consulta ao ViaCEP
 (inclusive CEP inexistente, falha de rede e requisição cancelada), e o cliente HTTP contra
 as duas formas de 401 da API (filtro do Spring Security com ProblemDetail × ProblemDetail de
