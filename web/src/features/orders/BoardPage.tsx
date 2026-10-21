@@ -1,7 +1,7 @@
 import { Link } from "react-router";
-import PageHeader from "../../components/PageHeader";
-import CheckIcon from "../../components/icons/CheckIcon";
-import PlusIcon from "../../components/icons/PlusIcon";
+import { PageHeader } from "../../components/PageHeader";
+import { CheckIcon } from "../../components/icons/CheckIcon";
+import { PlusIcon } from "../../components/icons/PlusIcon";
 import { useMediaQuery } from "../../lib/useMediaQuery";
 import { Column } from "./Column";
 import { MobileBoard } from "./MobileBoard";

@@ -1,6 +1,6 @@
 import { LoadMoreFooter } from "./LoadMoreFooter";
 import { MobileEmpty } from "./MobileEmpty";
-import MobileTab from "./MobileTab";
+import { MobileTab } from "./MobileTab";
 import { OrderCard } from "./OrderCard";
 import { OrderListError } from "./OrderListError";
 import { OrderListSkeleton } from "./OrderListSkeleton";

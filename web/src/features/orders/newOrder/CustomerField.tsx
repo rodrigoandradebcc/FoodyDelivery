@@ -2,7 +2,7 @@ import { useFormContext } from "react-hook-form";
 import type { NewOrderForm } from "../newOrderForm";
 import { validateRequiredText } from "../neworderValidation";
 
-export default function CustomerField() {
+export function CustomerField() {
   const {
     register,
     formState: { errors },

@@ -1,10 +1,10 @@
 import { FormProvider, useForm } from "react-hook-form";
 import { Link } from "react-router";
-import PageHeader from "../../components/PageHeader";
-import AddressFieldset from "./newOrder/AddressFieldset";
-import CustomerField from "./newOrder/CustomerField";
-import ItemsFieldset from "./newOrder/ItemsFieldset";
-import OrderSummary from "./newOrder/OrderSummary";
+import { PageHeader } from "../../components/PageHeader";
+import { AddressFieldset } from "./newOrder/AddressFieldset";
+import { CustomerField } from "./newOrder/CustomerField";
+import { ItemsFieldset } from "./newOrder/ItemsFieldset";
+import { OrderSummary } from "./newOrder/OrderSummary";
 import { useCreateOrder } from "./newOrder/useCreateOrder";
 import { NEW_ORDER_DEFAULTS } from "./newOrderDefaults";
 import type { NewOrderForm } from "./newOrderForm";

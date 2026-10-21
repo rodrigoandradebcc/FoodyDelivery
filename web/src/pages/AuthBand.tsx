@@ -1,4 +1,4 @@
-export default function AuthBand() {
+export function AuthBand() {
   return (
     <header className="auth-band">
       <h1 className="auth-brand">

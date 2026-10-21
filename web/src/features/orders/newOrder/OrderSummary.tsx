@@ -1,8 +1,8 @@
 import { useFormContext } from "react-hook-form";
-import LiveTotal from "./LiveTotal";
+import { LiveTotal } from "./LiveTotal";
 import type { NewOrderForm } from "../newOrderForm";
 
-export default function OrderSummary({ isSubmitting }: { isSubmitting: boolean }) {
+export function OrderSummary({ isSubmitting }: { isSubmitting: boolean }) {
   const { control } = useFormContext<NewOrderForm>();
 
   return (

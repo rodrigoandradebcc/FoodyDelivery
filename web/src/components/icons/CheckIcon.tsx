@@ -1,4 +1,4 @@
-export default function CheckIcon() {
+export function CheckIcon() {
   return (
     <svg
       width="16"

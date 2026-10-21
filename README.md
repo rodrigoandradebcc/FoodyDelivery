@@ -331,7 +331,7 @@ O front espelha essa organização por feature:
 web/src
 ├── api/                cliente HTTP tipado (request, ApiError/ProblemDetail), endpoints
 │                       da API e a consulta de CEP (ViaCEP)
-├── auth/               AuthProvider, useAuth, RequireAuth
+├── auth/               authStorage, AuthContext, AuthProvider, useAuth, RequireAuth
 ├── components/         AppShell (rail + faixa + Outlet), PageHeader, ícones
 ├── features/orders/    BoardPage, Column, OrderCard, MobileBoard, NewOrderPage,
 │                       OrderDetailPage, StatusActions, statusMeta, useOrders,
@@ -351,7 +351,7 @@ validação de todos os DTOs, unidades (`Order`, `OrderItem`, `OrderMapper`, `To
 pedidos, persistência (inclusive lock otimista), segurança (inclusive CORS) e OpenAPI sobre
 SQLite em arquivo temporário.
 
-**Web — 89 testes** (`cd web && npm test`), 12 deles fluxos de UI (login, criação de pedido e
+**Web — 95 testes** (`cd web && npm test`), 12 deles fluxos de UI (login, criação de pedido e
 mudança de status contra uma API falsa), além de dinheiro em centavos (incluindo os casos em que
 um round-trip por float perderia um centavo), máscara/strip de CEP, a consulta ao ViaCEP
 (inclusive CEP inexistente, falha de rede e requisição cancelada), e o cliente HTTP contra

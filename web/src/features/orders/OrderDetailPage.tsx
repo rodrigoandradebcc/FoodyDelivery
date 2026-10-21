@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router";
-import PageHeader from "../../components/PageHeader";
+import { PageHeader } from "../../components/PageHeader";
 import { maskCep } from "../../lib/cep";
 import { formatCentsBRL } from "../../lib/money";
 import { formatLocalDateTime } from "../../lib/time";

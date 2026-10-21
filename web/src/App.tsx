@@ -1,6 +1,6 @@
 import { Route, Routes } from "react-router";
-import RequireAuth from "./auth/RequireAuth";
-import AppShell from "./components/AppShell";
+import { RequireAuth } from "./auth/RequireAuth";
+import { AppShell } from "./components/AppShell";
 import BoardPage from "./features/orders/BoardPage";
 import NewOrderPage from "./features/orders/NewOrderPage";
 import OrderDetailPage from "./features/orders/OrderDetailPage";

@@ -8,7 +8,7 @@ interface ItemRowFieldsProps {
   onRemove: () => void;
 }
 
-export default function ItemRowFields({ index: i, removable, onRemove }: ItemRowFieldsProps) {
+export function ItemRowFields({ index: i, removable, onRemove }: ItemRowFieldsProps) {
   const {
     register,
     formState: { errors },

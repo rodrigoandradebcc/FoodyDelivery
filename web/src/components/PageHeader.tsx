@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import Greeting from "./Greeting";
+import { Greeting } from "./Greeting";
 
-export default function PageHeader({
+export function PageHeader({
   title,
   eyebrow,
   aside,

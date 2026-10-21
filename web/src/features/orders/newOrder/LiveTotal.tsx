@@ -3,7 +3,7 @@ import { formatCentsBRL } from "../../../lib/money";
 import type { NewOrderForm } from "../newOrderForm";
 import { computeOrderTotals } from "./computeOrderTotals";
 
-export default function LiveTotal({ control }: { control: Control<NewOrderForm> }) {
+export function LiveTotal({ control }: { control: Control<NewOrderForm> }) {
   const items = useWatch({ control, name: "items" });
   const { totalCents, units } = computeOrderTotals(items ?? []);
 

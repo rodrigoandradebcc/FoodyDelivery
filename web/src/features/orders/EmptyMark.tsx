@@ -1,4 +1,4 @@
-export default function EmptyMark() {
+export function EmptyMark() {
   return (
     <svg
       width="28"

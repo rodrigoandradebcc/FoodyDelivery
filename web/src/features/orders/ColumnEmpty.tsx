@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import type { OrderStatus } from "../../api/types";
-import EmptyMark from "./EmptyMark";
+import { EmptyMark } from "./EmptyMark";
 import { EMPTY_HINT } from "./statusMeta";
 
 export function ColumnEmpty({ status }: { status: OrderStatus }) {

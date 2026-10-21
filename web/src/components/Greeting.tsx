@@ -1,6 +1,6 @@
 import { greetingFor } from "../lib/greeting";
 
-export default function Greeting() {
+export function Greeting() {
   const { salutation, date } = greetingFor(new Date());
   return (
     <p className="page-bar-greet">

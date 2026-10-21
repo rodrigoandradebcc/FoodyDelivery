@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, Navigate } from "react-router";
 import { useAuth } from "../auth/useAuth";
-import AuthBand from "./AuthBand";
+import { AuthBand } from "./AuthBand";
 import type { LoginForm } from "./loginForm";
 import { useLoginRedirect } from "./useLoginRedirect";
 import { useLoginSubmit } from "./useLoginSubmit";

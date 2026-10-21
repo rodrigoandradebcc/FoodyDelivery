@@ -11,7 +11,7 @@ import {
 import { UFS } from "./ufs";
 import { useCepAutofill } from "./useCepAutofill";
 
-export default function AddressFieldset() {
+export function AddressFieldset() {
   const {
     control,
     register,

@@ -2,7 +2,7 @@ import type { OrderStatus } from "../../api/types";
 import { STATUS_META } from "./statusMeta";
 import { useOrdersByStatus } from "./useOrders";
 
-export default function MobileTab({
+export function MobileTab({
   status,
   active,
   onSelect,
