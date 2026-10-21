@@ -1,27 +1,11 @@
-import { Link } from "react-router";
 import type { OrderStatus } from "../../api/types";
-import { OrderCard } from "./OrderCard";
-import { EMPTY_HINT, STATUS_META } from "./statusMeta";
+import { AnimatedOrderCard } from "./AnimatedOrderCard";
+import { ColumnEmpty } from "./ColumnEmpty";
+import { LoadMoreFooter } from "./LoadMoreFooter";
+import { OrderListError } from "./OrderListError";
+import { OrderListSkeleton } from "./OrderListSkeleton";
+import { STATUS_META } from "./statusMeta";
 import { useOrdersByStatus } from "./useOrders";
-
-function EmptyMark() {
-  return (
-    <svg
-      width="28"
-      height="28"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M4 8.5 12 4l8 4.5v7L12 20l-8-4.5v-7Z" />
-      <path d="m4 8.5 8 4.5 8-4.5M12 13v7" />
-    </svg>
-  );
-}
 
 export function Column({
   status,
@@ -37,73 +21,45 @@ export function Column({
   return (
     <section
       className="board-column"
-      style={{ borderTopColor: meta.ink }}
+      data-status={status}
       aria-label={meta.label}
     >
       <header className="column-header">
-        <span className="badge" style={{ background: meta.bg, color: meta.ink }}>
-          {meta.icon} {meta.label}
-        </span>
-        <span className="column-count mono">{page?.totalElements ?? "…"}</span>
+        <h2 className="column-title">
+          <span className="column-icon">{meta.icon}</span>
+          {meta.label}
+        </h2>
+        <span className="column-count tnum">{page?.totalElements ?? "…"}</span>
       </header>
 
       {query.isPending && (
         <div className="column-list" aria-hidden="true">
-          <div className="skeleton-card" />
-          <div className="skeleton-card" />
-          <div className="skeleton-card" />
+          <OrderListSkeleton count={3} />
         </div>
       )}
 
       {query.isError && !page && (
-        <div className="column-empty">
-          <p>Não foi possível carregar.</p>
-          <button
-            type="button"
-            className="btn btn-sm btn-ghost"
-            onClick={() => query.refetch()}
-          >
-            Tentar de novo
-          </button>
-        </div>
+        <OrderListError onRetry={() => query.refetch()} />
       )}
 
-      {page && page.content.length === 0 && (
-        <div className="column-empty">
-          <EmptyMark />
-          <p>{EMPTY_HINT[status]}</p>
-          {status === "RECEBIDO" && (
-            <Link to="/orders/new" className="btn btn-sm btn-ghost">
-              Criar pedido
-            </Link>
-          )}
-        </div>
-      )}
+      {page && page.content.length === 0 && <ColumnEmpty status={status} />}
 
       {page && page.content.length > 0 && (
         <div className="column-list">
-          {page.content.map((order, i) => (
-            <div
+          {page.content.map((order, index) => (
+            <AnimatedOrderCard
               key={order.id}
-              className="card-enter"
-              style={{ animationDelay: `${Math.min(i, 8) * 30}ms` }}
-            >
-              <OrderCard order={order} notify={notify} />
-            </div>
+              order={order}
+              index={index}
+              notify={notify}
+            />
           ))}
-          {query.isFetchNextPageError && (
-            <p className="column-page-error">Não foi possível carregar mais pedidos.</p>
-          )}
-          {query.hasNextPage && (
-            <button
-              type="button"
-              className="btn btn-sm btn-ghost column-load-more"
-              disabled={query.isFetchingNextPage}
-              onClick={() => query.fetchNextPage()}
-            >
-              {query.isFetchingNextPage ? "Carregando…" : "Carregar mais"}
-            </button>
-          )}
+          <LoadMoreFooter
+            hasNextPage={!!query.hasNextPage}
+            isFetchingNextPage={query.isFetchingNextPage}
+            isFetchNextPageError={query.isFetchNextPageError}
+            onLoadMore={() => query.fetchNextPage()}
+          />
         </div>
       )}
     </section>

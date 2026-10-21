@@ -53,7 +53,7 @@ respostas de pedido, porque nenhuma tela precisa dele.
 |---|---|---|
 | Aplicação em React | `web/` (React 19 + TypeScript + Vite) | `cd web && npm run dev` |
 | Lista os pedidos com seus status atuais | `web/src/features/orders/BoardPage.tsx` e `Column.tsx` | a tela inicial: uma coluna por etapa |
-| Permite criar um novo pedido | `web/src/features/orders/NewOrderPage.tsx` | botão "Novo pedido" no topo |
+| Permite criar um novo pedido | `web/src/features/orders/NewOrderPage.tsx` | botão "Novo pedido" na barra do quadro |
 
 ### Versionamento
 
@@ -331,18 +331,19 @@ O front espelha essa organização por feature:
 web/src
 ├── api/                cliente HTTP tipado (request, ApiError/ProblemDetail), endpoints
 │                       da API e a consulta de CEP (ViaCEP)
-├── auth/               AuthProvider, useAuth, RequireAuth
-├── components/         AppShell (header + Outlet)
-├── features/orders/    BoardPage, Column, OrderCard, CanceledTray, MobileBoard,
-│                       NewOrderPage, statusMeta, useOrders
-├── lib/                money (centavos inteiros), cep, time, useMediaQuery
+├── auth/               authStorage, AuthContext, AuthProvider, useAuth, RequireAuth
+├── components/         AppShell (rail + faixa + Outlet), PageHeader, ícones
+├── features/orders/    BoardPage, Column, OrderCard, MobileBoard, NewOrderPage,
+│                       OrderDetailPage, StatusActions, statusMeta, useOrders,
+│                       newOrder/ (hooks, fieldsets e mapeamento do payload)
+├── lib/                money (centavos inteiros), cep, time, greeting, useMediaQuery
 ├── pages/              LoginPage, RegisterPage
 └── index.css           design tokens e classes compartilhadas
 ```
 
 ## Testes
 
-**API — 212 testes**, todos verdes (`./mvnw test`): a matriz 5×5 completa da máquina de estados,
+**API — 221 testes**, todos verdes (`./mvnw test`): a matriz 5×5 completa da máquina de estados,
 validação de todos os DTOs, unidades (`Order`, `OrderItem`, `OrderMapper`, `TokenService`,
 `OrderService`, `AuthService`, conversor de `Instant`, validador de bytes), fatias
 `@WebMvcTest` dos dois controllers com a segurança real e o serviço mockado, fatias
@@ -350,11 +351,13 @@ validação de todos os DTOs, unidades (`Order`, `OrderItem`, `OrderMapper`, `To
 pedidos, persistência (inclusive lock otimista), segurança (inclusive CORS) e OpenAPI sobre
 SQLite em arquivo temporário.
 
-**Web — 22 testes** (`cd web && npm test`): dinheiro em centavos (incluindo os casos em que
+**Web — 101 testes** (`cd web && npm test`), 13 deles fluxos de UI (login, criação de pedido e
+mudança de status contra uma API falsa), além de dinheiro em centavos (incluindo os casos em que
 um round-trip por float perderia um centavo), máscara/strip de CEP, a consulta ao ViaCEP
 (inclusive CEP inexistente, falha de rede e requisição cancelada), e o cliente HTTP contra
 as duas formas de 401 da API (filtro do Spring Security com ProblemDetail × ProblemDetail de
-login inválido). `npm run build` roda o typecheck junto.
+login inválido), e os módulos puros de erros (cadastro, login, status), rótulos, atraso de
+animação, armazenamento do token e totais da comanda. `npm run build` roda o typecheck junto.
 
 ---
 

@@ -2,12 +2,13 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router";
-import "@fontsource-variable/fraunces";
-import "@fontsource-variable/public-sans";
+import "@fontsource-variable/fraunces/soft.css";
+import "@fontsource-variable/atkinson-hyperlegible-next";
 import "./index.css";
 import { ApiError } from "./api/http";
 import App from "./App";
-import { AuthProvider } from "./auth/auth";
+import { AuthProvider } from "./auth/AuthProvider";
+import { ThemeProvider } from "./theme/ThemeProvider";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,12 +28,14 @@ if (!rootEl) {
 
 createRoot(rootEl).render(
   <StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <QueryClientProvider client={queryClient}>
-          <App />
-        </QueryClientProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <QueryClientProvider client={queryClient}>
+            <App />
+          </QueryClientProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ThemeProvider>
   </StrictMode>,
 );

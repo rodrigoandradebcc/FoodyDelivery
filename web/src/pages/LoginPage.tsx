@@ -1,24 +1,16 @@
 import { useState } from "react";
-import { useForm, type SubmitHandler } from "react-hook-form";
-import { Link, Navigate, useLocation, useNavigate } from "react-router";
-import { ApiError } from "../api/http";
-import { useAuth } from "../auth/auth";
+import { useForm } from "react-hook-form";
+import { Link, Navigate } from "react-router";
+import { useAuth } from "../auth/useAuth";
+import { ThemeToggle } from "../components/ThemeToggle";
+import { AuthBand } from "./AuthBand";
+import type { LoginForm } from "./loginForm";
+import { useLoginRedirect } from "./useLoginRedirect";
+import { useLoginSubmit } from "./useLoginSubmit";
 import "./auth.css";
 
-interface LoginForm {
-  email: string;
-  password: string;
-}
-
-function loginErrorMessage(err: unknown): string {
-  if (err instanceof ApiError && err.status === 401) return "E-mail ou senha incorretos.";
-  return err instanceof Error ? err.message : "Erro inesperado.";
-}
-
 export default function LoginPage() {
-  const { isAuthenticated, sessionExpired, signIn } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { isAuthenticated, sessionExpired } = useAuth();
   const [showPw, setShowPw] = useState(false);
   const {
     register,
@@ -27,36 +19,27 @@ export default function LoginPage() {
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({ mode: "onBlur" });
 
-  const from = (location.state as { from?: string } | null)?.from ?? "/";
+  const from = useLoginRedirect();
+  const onSubmit = useLoginSubmit(setError);
 
   if (isAuthenticated) return <Navigate to={from} replace />;
-
-  const onSubmit: SubmitHandler<LoginForm> = async ({ email, password }) => {
-    try {
-      await signIn(email, password);
-      navigate(from, { replace: true });
-    } catch (err) {
-      setError("root.serverError", { message: loginErrorMessage(err) });
-    }
-  };
 
   const formError = errors.root?.serverError?.message;
 
   return (
     <div className="auth-page">
-      <div className="auth-card card">
-        <h1 className="auth-brand">
-          Foody<span>.</span>
-        </h1>
+      <AuthBand />
+      <main className="auth-card card">
+        <ThemeToggle className="auth-theme-toggle" labelClassName="visually-hidden" iconClassName="auth-theme-icon" />
         <p className="auth-sub">Entre para acompanhar o quadro de pedidos.</p>
 
         {sessionExpired && (
-          <output className="auth-alert auth-alert-info">
+          <output className="alert alert-info">
             Sua sessão expirou. Entre novamente.
           </output>
         )}
         {formError && (
-          <p className="auth-alert" role="alert">
+          <p className="alert" role="alert">
             {formError}
           </p>
         )}
@@ -102,7 +85,7 @@ export default function LoginPage() {
               </span>
             )}
           </div>
-          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+          <button type="submit" className="btn btn-primary btn-pill btn-lg auth-submit" disabled={isSubmitting}>
             {isSubmitting ? "Entrando…" : "Entrar"}
           </button>
         </form>
@@ -110,7 +93,7 @@ export default function LoginPage() {
         <p className="auth-alt">
           Primeira vez aqui? <Link to="/register">Crie sua conta</Link>
         </p>
-      </div>
+      </main>
     </div>
   );
 }

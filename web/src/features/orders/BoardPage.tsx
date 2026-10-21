@@ -1,53 +1,55 @@
-import { useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
-import { useLocation } from "react-router";
+import { Link } from "react-router";
+import { PageHeader } from "../../components/PageHeader";
+import { CheckIcon } from "../../components/icons/CheckIcon";
+import { PlusIcon } from "../../components/icons/PlusIcon";
 import { useMediaQuery } from "../../lib/useMediaQuery";
 import { Column } from "./Column";
 import { MobileBoard } from "./MobileBoard";
 import { PIPELINE } from "./statusMeta";
+import { useBoardToast } from "./useBoardToast";
 import "./board.css";
 
 export default function BoardPage() {
-  const location = useLocation();
-  const queryClient = useQueryClient();
   const isDesktop = useMediaQuery("(min-width: 1024px)");
-  const [toast, setToast] = useState<string | null>(null);
-
-  useEffect(() => {
-    if ((location.state as { created?: boolean } | null)?.created) {
-      setToast("Pedido criado.");
-      void queryClient.invalidateQueries({ queryKey: ["orders"] });
-      window.history.replaceState({}, "");
-    }
-  }, [location.state, queryClient]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 4000);
-    return () => clearTimeout(t);
-  }, [toast]);
+  const { toast, notify } = useBoardToast();
 
   return (
     <div className="board-page">
-      <h1 className="board-title">Pedidos</h1>
-      <p className="board-lede">
-        Cada pedido segue as quatro etapas abaixo. Cancelar tira o pedido do fluxo — os
-        cancelados ficam na última coluna do quadro.
-      </p>
+      <PageHeader title="Pedidos" />
+      <div className="board-toolbar">
+        <p className="board-lede">
+          Cada pedido segue as quatro etapas abaixo. Cancelar tira o pedido do fluxo — os
+          cancelados ficam na última coluna do quadro.
+        </p>
+        <Link to="/orders/new" className="btn btn-primary btn-pill btn-lg">
+          <PlusIcon />
+          Novo pedido
+        </Link>
+      </div>
 
       {isDesktop ? (
-        <div className="board-columns">
+        <div
+          className="board-columns"
+          tabIndex={0}
+          role="group"
+          aria-label="Colunas de status"
+        >
           {PIPELINE.map((status) => (
-            <Column key={status} status={status} notify={setToast} />
+            <Column key={status} status={status} notify={notify} />
           ))}
-          <Column status="CANCELADO" notify={setToast} />
+          <Column status="CANCELADO" notify={notify} />
         </div>
       ) : (
-        <MobileBoard notify={setToast} />
+        <MobileBoard notify={notify} />
       )}
 
       <div aria-live="polite" className="toast-region">
-        {toast && <p className="toast">{toast}</p>}
+        {toast && (
+          <p className="toast">
+            <CheckIcon />
+            {toast}
+          </p>
+        )}
       </div>
     </div>
   );
