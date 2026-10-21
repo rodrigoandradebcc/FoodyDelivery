@@ -1,21 +1,18 @@
-import { useState } from "react";
 import { Link, useParams } from "react-router";
 import PageHeader from "../../components/PageHeader";
-import { ApiError } from "../../api/http";
 import { maskCep } from "../../lib/cep";
 import { formatCentsBRL } from "../../lib/money";
 import { formatLocalDateTime } from "../../lib/time";
-import { statusErrorMessage } from "./statusErrorMessage";
 import { STATUS_META } from "./statusMeta";
 import { StatusActions } from "./StatusActions";
 import { useOrderDetail } from "./useOrderDetail";
+import { useStatusMutationError } from "./useStatusMutationError";
 import "./orderdetail.css";
 
 export default function OrderDetailPage() {
   const { id } = useParams();
-  const [mutationError, setMutationError] = useState<string | null>(null);
-  const query = useOrderDetail(id);
-  const order = query.data;
+  const { query, order, notFound, loadErrorMessage } = useOrderDetail(id);
+  const { mutationError, onChangeStart, onError } = useStatusMutationError();
 
   if (query.isPending) {
     return (
@@ -29,7 +26,6 @@ export default function OrderDetailPage() {
   }
 
   if (query.isError || !order) {
-    const notFound = query.error instanceof ApiError && query.error.status === 404;
     return (
       <div className="detail-state">
         <PageHeader
@@ -38,7 +34,7 @@ export default function OrderDetailPage() {
         />
         {!notFound && (
           <div className="card detail-state-content">
-            <p>{query.error instanceof Error ? query.error.message : "Tente novamente."}</p>
+            <p>{loadErrorMessage}</p>
             <button type="button" className="btn btn-ghost" onClick={() => query.refetch()}>
               Tentar de novo
             </button>
@@ -105,8 +101,8 @@ export default function OrderDetailPage() {
           {mutationError && <p className="detail-error" role="alert">{mutationError}</p>}
           <StatusActions
             order={order}
-            onChangeStart={() => setMutationError(null)}
-            onError={(error) => setMutationError(statusErrorMessage(error, "pedido"))}
+            onChangeStart={onChangeStart}
+            onError={onError}
           />
         </section>
       </div>
