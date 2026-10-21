@@ -29,6 +29,8 @@
   grid-auto-columns: minmax(var(--col-min), 1fr);
   gap: var(--sp-4);
   overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
   scroll-snap-type: x proximity;
   overscroll-behavior-x: contain;
   align-items: start;
@@ -159,6 +161,8 @@
     flex: 1;
     overflow-x: hidden;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
     padding: var(--sp-1) var(--sp-3);
     margin: calc(var(--sp-1) * -1) calc(var(--sp-3) * -1);
   }

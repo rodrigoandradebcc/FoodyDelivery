@@ -114,7 +114,7 @@
     --topbar-h: 3.5rem;
     --band-h: 8.5rem;
     --gutter: clamp(1rem, 2.5vw, 2rem);
-    --col-min: 15.5rem;
+    --col-min: 13.5rem;
     --tear-bg: var(--bg);
 
     --icon-md: 20px;
