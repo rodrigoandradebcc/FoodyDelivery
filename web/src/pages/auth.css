@@ -38,7 +38,7 @@
   width: 2.25rem;
   height: 2.25rem;
   border-radius: var(--r-sm);
-  background: var(--brand-on-band);
+  background: var(--accent);
   color: var(--ticket-ink);
   font-size: var(--text-lg);
 }
