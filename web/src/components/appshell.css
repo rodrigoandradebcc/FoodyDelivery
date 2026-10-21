@@ -4,24 +4,12 @@
   min-height: 100dvh;
   position: relative;
   isolation: isolate;
+  overflow-x: clip;
   background: var(--bg);
   transition: grid-template-columns var(--dur-slow) var(--ease-out);
 }
 .shell[data-rail="open"] {
   grid-template-columns: var(--rail-w-open) minmax(0, 1fr);
-}
-.shell::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: var(--band-h);
-  background: var(--band);
-  z-index: -1;
-}
-@media (min-width: 640px) {
-  .shell:not(:has(.page-bar-eyebrow)) {
-    --band-h: calc(var(--sp-5) + 2 * var(--sp-4) + 1.1 * var(--text-2xl) + 2px + var(--sp-2));
-  }
 }
 
 .rail {
@@ -219,6 +207,7 @@
 }
 
 .page-bar {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -255,6 +244,14 @@
   gap: var(--sp-2);
   min-width: 0;
 }
+.page-bar::before {
+  content: "";
+  position: absolute;
+  inset: -100vh -100vw 50% -100vw;
+  z-index: -1;
+  background: var(--band);
+  pointer-events: none;
+}
 .page-bar-greet {
   color: var(--ink-soft);
   font-size: var(--text-sm);
@@ -271,9 +268,6 @@
   .shell[data-rail="open"] {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: var(--topbar-h) 1fr;
-  }
-  .shell::before {
-    top: var(--topbar-h);
   }
   .rail {
     flex-direction: row;

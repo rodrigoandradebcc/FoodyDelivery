@@ -112,7 +112,6 @@
     --rail-w: 4.5rem;
     --rail-w-open: 14.5rem;
     --topbar-h: 3.5rem;
-    --band-h: 8.5rem;
     --gutter: clamp(1rem, 2.5vw, 2rem);
     --col-min: 13.5rem;
     --tear-bg: var(--bg);
@@ -129,11 +128,6 @@
     --z-toast: 1000;
   }
 
-  @media (max-width: 639.98px) {
-    :root {
-      --band-h: 6.5rem;
-    }
-  }
 
   :root[data-theme="light"] {
     color-scheme: light;
