@@ -17,7 +17,7 @@
   top: var(--topbar-h);
   background: var(--bg);
   z-index: 10;
-  padding: var(--sp-1) 0;
+  padding: var(--sp-1);
 }
 
 .mtabs::-webkit-scrollbar {
