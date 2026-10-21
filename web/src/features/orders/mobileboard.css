@@ -2,19 +2,22 @@
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
+  min-width: 0;
 }
 
 .mtabs {
   display: flex;
   gap: var(--sp-2);
+  min-width: 0;
+  max-width: 100%;
   overflow-x: auto;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
   position: sticky;
-  top: 68px;
+  top: var(--topbar-h);
   background: var(--bg);
   z-index: 10;
-  padding: var(--sp-1) 0;
+  padding: var(--sp-1);
 }
 
 .mtabs::-webkit-scrollbar {
@@ -23,38 +26,62 @@
 
 .mtab {
   scroll-snap-align: start;
+  flex: none;
   display: inline-flex;
   align-items: center;
-  gap: var(--sp-1);
+  gap: var(--sp-2);
   min-height: 44px;
   padding: 0 var(--sp-3);
   white-space: nowrap;
-  border: none;
-  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
   cursor: pointer;
-  border-bottom: 3px solid transparent;
   color: var(--ink-soft);
   font-weight: 600;
   font-size: var(--text-sm);
   touch-action: manipulation;
 }
 
+.mtab-active {
+  background: var(--st-bg);
+  color: var(--st-ink);
+  border-color: var(--st-bar);
+  box-shadow: inset 0 -3px 0 var(--st-bar);
+}
+
 .mtab-count {
-  background: var(--surface-dim);
-  border-radius: 999px;
+  background: var(--surface-sunken);
+  border-radius: var(--r-pill);
   padding: 0 var(--sp-2);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
 }
 
 .mtab-exit {
-  border-left: 1px solid var(--line);
-  margin-left: var(--sp-2);
-  padding-left: var(--sp-4);
-  opacity: 0.8;
+  position: relative;
+  margin-left: var(--sp-3);
+}
+
+.mtab-exit::before {
+  content: "";
+  position: absolute;
+  left: calc(-1 * var(--sp-3));
+  top: 50%;
+  width: 1px;
+  height: 24px;
+  background: var(--line-strong);
+  transform: translateY(-50%);
 }
 
 .mboard-list {
   display: flex;
   flex-direction: column;
   gap: var(--sp-3);
+  min-width: 0;
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .mtabs {
+    top: 0;
+  }
 }
