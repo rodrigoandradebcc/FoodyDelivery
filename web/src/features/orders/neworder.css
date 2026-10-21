@@ -215,7 +215,7 @@ html:has(.neworder) {
   }
 }
 
-@media (max-width: 639px) {
+@media (max-width: 639.98px) {
   .no-section {
     padding: var(--sp-4);
   }
