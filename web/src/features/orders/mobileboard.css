@@ -1,3 +1,8 @@
+.mboard,
+html:has(.shell .mtabs) {
+  --mtabs-h: 3.25rem;
+}
+
 .mboard {
   display: flex;
   flex-direction: column;
@@ -6,7 +11,7 @@
 }
 
 html:has(.shell .mtabs) {
-  scroll-padding-top: calc(3.25rem + var(--sp-2));
+  scroll-padding-top: calc(var(--mtabs-h) + var(--sp-2));
 }
 
 .mtabs {
@@ -20,7 +25,7 @@ html:has(.shell .mtabs) {
   position: sticky;
   top: var(--topbar-h);
   background: var(--bg);
-  z-index: 10;
+  z-index: var(--z-sticky);
   padding: var(--sp-1);
 }
 
@@ -92,6 +97,6 @@ html:has(.shell .mtabs) {
 
 @media (max-width: 639.98px) {
   html:has(.shell .mtabs) {
-    scroll-padding-top: calc(var(--topbar-h) + 3.25rem + var(--sp-2));
+    scroll-padding-top: calc(var(--topbar-h) + var(--mtabs-h) + var(--sp-2));
   }
 }

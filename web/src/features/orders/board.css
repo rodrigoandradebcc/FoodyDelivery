@@ -177,7 +177,7 @@
   display: flex;
   justify-content: center;
   pointer-events: none;
-  z-index: 50;
+  z-index: var(--z-toast);
 }
 
 .toast {

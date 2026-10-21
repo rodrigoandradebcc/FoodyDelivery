@@ -55,7 +55,8 @@
     --primary-ink: #ffffff;
     --accent: #c2410c;
     --focus: #c2410c;
-    --focus-halo: #ffffff;
+    --brand-on-band: #ff9a6b;
+    --ticket-ink: #ffffff;
     --danger: #b42318;
     --danger-ink: #ffffff;
     --danger-bg: #fdecea;
@@ -116,20 +117,15 @@
     --col-min: 15.5rem;
     --tear-bg: var(--bg);
 
-    --icon-sm: 16px;
     --icon-md: 20px;
-    --icon-lg: 24px;
 
     --dur-fast: 120ms;
     --dur-base: 180ms;
     --dur-slow: 260ms;
     --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
-    --stagger-step: 40ms;
 
-    --z-base: 0;
     --z-sticky: 10;
     --z-overlay: 40;
-    --z-modal: 100;
     --z-toast: 1000;
   }
 
@@ -156,7 +152,8 @@
       --primary-ink: #0c1121;
       --accent: #ff9a6b;
       --focus: #ffb08a;
-      --focus-halo: #0c1121;
+      --brand-on-band: var(--accent);
+      --ticket-ink: var(--band);
       --danger: #ff8a7a;
       --danger-ink: #0c1121;
       --danger-bg: #3a1a1f;
@@ -431,13 +428,6 @@
     flex: none;
     color: currentColor;
     stroke: currentColor;
-  }
-  .status-pill > i {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: currentColor;
-    flex: none;
   }
 
   .status-bar {

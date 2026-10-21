@@ -53,7 +53,7 @@ respostas de pedido, porque nenhuma tela precisa dele.
 |---|---|---|
 | Aplicação em React | `web/` (React 19 + TypeScript + Vite) | `cd web && npm run dev` |
 | Lista os pedidos com seus status atuais | `web/src/features/orders/BoardPage.tsx` e `Column.tsx` | a tela inicial: uma coluna por etapa |
-| Permite criar um novo pedido | `web/src/features/orders/NewOrderPage.tsx` | botão "Novo pedido" no topo |
+| Permite criar um novo pedido | `web/src/features/orders/NewOrderPage.tsx` | botão "Novo pedido" na barra do quadro |
 
 ### Versionamento
 
