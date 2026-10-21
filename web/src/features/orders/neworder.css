@@ -100,8 +100,8 @@ html:has(.neworder) {
 
 .no-item-add {
   align-self: start;
-  border: 1px dashed var(--line-strong);
-  background: transparent;
+  border-style: dashed;
+  border-color: var(--line-strong);
 }
 
 .no-addr-grid {
@@ -218,6 +218,12 @@ html:has(.neworder) {
 @media (max-width: 639px) {
   .no-section {
     padding: var(--sp-4);
+  }
+  .no-footer {
+    gap: var(--sp-3);
+  }
+  .no-submit {
+    padding-inline: var(--sp-4);
   }
   .no-item-row {
     grid-template-columns: 1fr 1fr;
