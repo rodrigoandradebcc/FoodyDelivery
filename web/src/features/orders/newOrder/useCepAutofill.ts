@@ -3,7 +3,7 @@ import { useFormContext } from "react-hook-form";
 import { CepNotFoundError, lookupCep } from "../../../api/viacep";
 import type { NewOrderForm } from "../newOrderForm";
 
-export type CepStatus = "idle" | "loading" | "filled";
+type CepStatus = "idle" | "loading" | "filled";
 
 export function useCepAutofill() {
   const { setValue, setError, setFocus, clearErrors } = useFormContext<NewOrderForm>();

@@ -6,7 +6,8 @@ import CustomerField from "./newOrder/CustomerField";
 import ItemsFieldset from "./newOrder/ItemsFieldset";
 import OrderSummary from "./newOrder/OrderSummary";
 import { useCreateOrder } from "./newOrder/useCreateOrder";
-import { NEW_ORDER_DEFAULTS, type NewOrderForm } from "./newOrderForm";
+import { NEW_ORDER_DEFAULTS } from "./newOrderDefaults";
+import type { NewOrderForm } from "./newOrderForm";
 import "./neworder.css";
 
 export default function NewOrderPage() {

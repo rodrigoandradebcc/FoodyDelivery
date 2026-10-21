@@ -1,6 +1,7 @@
 import { useFieldArray, useFormContext } from "react-hook-form";
 import PlusIcon from "../../../components/icons/PlusIcon";
-import { EMPTY_ITEM, type NewOrderForm } from "../newOrderForm";
+import { EMPTY_ITEM } from "../newOrderDefaults";
+import type { NewOrderForm } from "../newOrderForm";
 import { validateItemCount } from "../neworderValidation";
 import ItemRowFields from "./ItemRowFields";
 
