@@ -1,11 +1,47 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router";
+import PageHeader from "../../components/PageHeader";
 import { useMediaQuery } from "../../lib/useMediaQuery";
 import { Column } from "./Column";
 import { MobileBoard } from "./MobileBoard";
 import { PIPELINE } from "./statusMeta";
 import "./board.css";
+
+function PlusIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d="M8 3.5v9M3.5 8h9" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="m3.5 8.5 3 3 6-7" />
+    </svg>
+  );
+}
 
 export default function BoardPage() {
   const location = useLocation();
@@ -29,17 +65,25 @@ export default function BoardPage() {
 
   return (
     <div className="board-page">
-      <h1 className="board-title">Pedidos</h1>
-      <p className="board-lede">
-        Cada pedido segue as quatro etapas abaixo. Cancelar tira o pedido do fluxo — os
-        cancelados ficam na última coluna do quadro.
-      </p>
-      <Link to="/orders/new" className="btn btn-primary btn-pill btn-lg">
-        Novo pedido
-      </Link>
+      <PageHeader title="Pedidos" />
+      <div className="board-toolbar">
+        <p className="board-lede">
+          Cada pedido segue as quatro etapas abaixo. Cancelar tira o pedido do fluxo — os
+          cancelados ficam na última coluna do quadro.
+        </p>
+        <Link to="/orders/new" className="btn btn-primary btn-pill btn-lg">
+          <PlusIcon />
+          Novo pedido
+        </Link>
+      </div>
 
       {isDesktop ? (
-        <div className="board-columns">
+        <div
+          className="board-columns"
+          tabIndex={0}
+          role="group"
+          aria-label="Colunas de status"
+        >
           {PIPELINE.map((status) => (
             <Column key={status} status={status} notify={setToast} />
           ))}
@@ -50,7 +94,12 @@ export default function BoardPage() {
       )}
 
       <div aria-live="polite" className="toast-region">
-        {toast && <p className="toast">{toast}</p>}
+        {toast && (
+          <p className="toast">
+            <CheckIcon />
+            {toast}
+          </p>
+        )}
       </div>
     </div>
   );

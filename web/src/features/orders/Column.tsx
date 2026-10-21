@@ -37,14 +37,15 @@ export function Column({
   return (
     <section
       className="board-column"
-      style={{ borderTopColor: meta.ink }}
+      data-status={status}
       aria-label={meta.label}
     >
       <header className="column-header">
-        <span className="badge" style={{ background: meta.bg, color: meta.ink }}>
-          {meta.icon} {meta.label}
-        </span>
-        <span className="column-count mono">{page?.totalElements ?? "…"}</span>
+        <h2 className="column-title">
+          <span className="column-icon">{meta.icon}</span>
+          {meta.label}
+        </h2>
+        <span className="column-count tnum">{page?.totalElements ?? "…"}</span>
       </header>
 
       {query.isPending && (
