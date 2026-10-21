@@ -32,8 +32,8 @@
   scroll-snap-type: x proximity;
   overscroll-behavior-x: contain;
   align-items: start;
-  padding: 0 var(--sp-1) var(--sp-1);
-  margin-inline: calc(var(--sp-1) * -1);
+  padding: 0 var(--sp-3) var(--sp-1);
+  margin-inline: calc(var(--sp-3) * -1);
 }
 
 .board-column {
@@ -157,9 +157,10 @@
   }
   .column-list {
     flex: 1;
+    overflow-x: hidden;
     overflow-y: auto;
-    padding: var(--sp-1);
-    margin: calc(var(--sp-1) * -1);
+    padding: var(--sp-1) var(--sp-3);
+    margin: calc(var(--sp-1) * -1) calc(var(--sp-3) * -1);
   }
 }
 
