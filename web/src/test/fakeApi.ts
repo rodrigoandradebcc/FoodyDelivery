@@ -65,6 +65,7 @@ export function installFakeApi(initialOrders: OrderResponse[] = []): FakeApi {
     },
   };
   let sequence = initialOrders.length;
+  const accounts = new Map<string, string>([[VALID_USER.email, VALID_USER.password]]);
 
   vi.stubGlobal("fetch", async (input: string, init: RequestInit = {}) => {
     const url = new URL(input);
@@ -79,9 +80,19 @@ export function installFakeApi(initialOrders: OrderResponse[] = []): FakeApi {
     const path = url.href.slice(API.length);
     state.calls.push({ method, path, body, authorization: headers.Authorization ?? null });
 
+    if (method === "POST" && path === "/auth/register") {
+      const { name, email, password } = body as { name: string; email: string; password: string };
+      const key = email.toLowerCase();
+      if (accounts.has(key)) {
+        return problem(409, "Conflict", "E-mail já cadastrado");
+      }
+      accounts.set(key, password);
+      return json(201, { id: `user-${accounts.size}`, name, email: key });
+    }
+
     if (method === "POST" && path === "/auth/login") {
       const { email, password } = body as typeof VALID_USER;
-      if (email === VALID_USER.email && password === VALID_USER.password) {
+      if (accounts.get(email.toLowerCase()) === password) {
         return json(200, { accessToken: "token-valido", tokenType: "Bearer", expiresIn: 3600 });
       }
       return problem(401, "Unauthorized", "Credenciais inválidas");
