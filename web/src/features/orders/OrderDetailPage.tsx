@@ -37,7 +37,7 @@ export default function OrderDetailPage() {
             </button>
           </>
         )}
-        <Link className="no-back" to="/">Voltar aos pedidos</Link>
+        <Link className="back-link" to="/">Voltar aos pedidos</Link>
       </div>
     );
   }
@@ -47,7 +47,7 @@ export default function OrderDetailPage() {
 
   return (
     <div className="order-detail">
-      <Link className="no-back" to="/">Voltar aos pedidos</Link>
+      <Link className="back-link" to="/">Voltar aos pedidos</Link>
       <header className="detail-header">
         <div>
           <p className="detail-id mono">Pedido #{order.id}</p>

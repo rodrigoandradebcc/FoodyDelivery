@@ -3,6 +3,7 @@ import type { OrderStatus } from "../../api/types";
 import { OrderCard } from "./OrderCard";
 import { EMPTY_HINT, PIPELINE, STATUS_META } from "./statusMeta";
 import { useOrdersByStatus } from "./useOrders";
+import "./mobileboard.css";
 
 const TABS: readonly OrderStatus[] = [...PIPELINE, "CANCELADO"];
 

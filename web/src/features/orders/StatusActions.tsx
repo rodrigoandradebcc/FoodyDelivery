@@ -54,7 +54,7 @@ export function StatusActions({
           </button>
           <button
             type="button"
-            className={`btn${size} btn-primary order-cancel-confirm`}
+            className={`btn${size} btn-danger`}
             aria-label={`Confirmar cancelamento do pedido de ${order.customerName}`}
             disabled={busy}
             onClick={() => changeStatus("CANCELADO")}

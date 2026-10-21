@@ -51,12 +51,12 @@ export default function LoginPage() {
         <p className="auth-sub">Entre para acompanhar o quadro de pedidos.</p>
 
         {sessionExpired && (
-          <output className="auth-alert auth-alert-info">
+          <output className="alert alert-info">
             Sua sessão expirou. Entre novamente.
           </output>
         )}
         {formError && (
-          <p className="auth-alert" role="alert">
+          <p className="alert" role="alert">
             {formError}
           </p>
         )}

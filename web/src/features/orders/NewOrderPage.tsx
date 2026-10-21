@@ -219,7 +219,7 @@ export default function NewOrderPage() {
   return (
     <form className="neworder" onSubmit={handleSubmit(onSubmit)} noValidate>
       <header className="no-head">
-        <Link to="/" className="no-back">
+        <Link to="/" className="back-link">
           Voltar ao quadro
         </Link>
         <h1>Novo pedido</h1>
@@ -230,7 +230,7 @@ export default function NewOrderPage() {
       </header>
 
       {formError && (
-        <p className="auth-alert" role="alert">
+        <p className="alert" role="alert">
           {formError}
         </p>
       )}

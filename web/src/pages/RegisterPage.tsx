@@ -66,7 +66,7 @@ export default function RegisterPage() {
         <p className="auth-sub">Crie sua conta para registrar pedidos.</p>
 
         {formError && (
-          <p className="auth-alert" role="alert">
+          <p className="alert" role="alert">
             {formError}
           </p>
         )}
