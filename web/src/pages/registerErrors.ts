@@ -6,7 +6,7 @@ export interface RegisterForm {
   password: string;
 }
 
-export type RegisterErrorTarget =
+type RegisterErrorTarget =
   | { kind: "field"; field: keyof RegisterForm; message: string; focus: boolean }
   | { kind: "root"; message: string };
 

@@ -4,7 +4,8 @@ import EyeIcon from "../../components/icons/EyeIcon";
 import { maskCep } from "../../lib/cep";
 import { formatCentsBRL } from "../../lib/money";
 import { formatLocalDateTime, formatRelative } from "../../lib/time";
-import { extraItemsLabel, statusErrorMessage } from "./orderText";
+import { extraItemsLabel } from "./extraItemsLabel";
+import { statusErrorMessage } from "./statusErrorMessage";
 import { StatusActions } from "./StatusActions";
 import "./ordercard.css";
 

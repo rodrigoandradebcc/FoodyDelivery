@@ -5,7 +5,7 @@ import { ApiError } from "../../api/http";
 import { maskCep } from "../../lib/cep";
 import { formatCentsBRL } from "../../lib/money";
 import { formatLocalDateTime } from "../../lib/time";
-import { statusErrorMessage } from "./orderText";
+import { statusErrorMessage } from "./statusErrorMessage";
 import { STATUS_META } from "./statusMeta";
 import { StatusActions } from "./StatusActions";
 import { useOrderDetail } from "./useOrderDetail";
